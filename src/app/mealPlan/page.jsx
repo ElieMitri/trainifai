@@ -100,7 +100,7 @@ function Page() {
   const [user, setUser] = useState(null);
   const [userData, setUserData] = useState(null);
   const [isMinimized, setIsMinimized] = useState(true);
-  const [parsedPlan, setParsedPlan] = useState("");
+  const [parsedPlan, setParsedPlan] = useState([]);
   const [todaysMeals, setTodaysMeals] = useState([]);
   const [notification, setNotification] = useState({
     visible: false,
