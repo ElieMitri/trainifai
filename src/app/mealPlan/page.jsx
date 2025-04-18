@@ -856,16 +856,6 @@ function Page() {
                       </li>
                     ))}
                   </ul>
-  
-                  {/* Macronutrients */}
-                  {section.macros && (
-                    <div className="meal-macros">
-                      <p>Calories: {section.macros.calories} kcal</p>
-                      <p>Protein: {section.macros.protein}g</p>
-                      <p>Carbs: {section.macros.carbs}g</p>
-                      <p>Fats: {section.macros.fats}g</p>
-                    </div>
-                  )}
                 </div>
                 <div className="clear"></div>
               </React.Fragment>
