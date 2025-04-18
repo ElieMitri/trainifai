@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 // import "./faq.css";
 
-const FAQPage = ({ user, userData, subscribed, notSubscribed }) => {
+const Page = ({ user, userData, subscribed, notSubscribed }) => {
   const [activeModal, setActiveModal] = useState(null);
   const [activeQuestion, setActiveQuestion] = useState(null);
 
@@ -167,4 +167,4 @@ const FAQPage = ({ user, userData, subscribed, notSubscribed }) => {
   );
 };
 
-export default FAQPage;
+export default Page;
