@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 // import "./faq.css";
 
-const Page = ({ user, userData, subscribed, notSubscribed }) => {
+const Page = () => {
   const [activeModal, setActiveModal] = useState(null);
   const [activeQuestion, setActiveQuestion] = useState(null);
 
