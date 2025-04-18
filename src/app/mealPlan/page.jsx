@@ -40,46 +40,50 @@ const parseMealPlan = (text) => {
   const sections = [];
   let currentSection = null;
 
-  // Only ignore summary totals that appear AFTER all meals
-  const summaryKeywords = [
-    "calories:",
-    "protein:",
-    "carbohydrates:",
-    "carbs:",
-    "fats:",
-  ];
-  let foundEnd = false;
+  const totalStopKeywords = ["total macronutrient breakdown", "note:"];
 
   for (let line of lines) {
     const lower = line.toLowerCase();
 
-    // If we've reached the total for the day, ignore everything afterward
-    if (
-      lower.includes("total for the day") ||
-      summaryKeywords.some((keyword) => lower.startsWith(keyword))
-    ) {
-      foundEnd = true;
-    }
+    // Stop at final totals or notes
+    if (totalStopKeywords.some((k) => lower.startsWith(k))) break;
 
-    if (foundEnd) continue; // ❌ Ignore anything after the final total section
-
-    if (/^(Breakfast|Lunch|Dinner|Snack)/i.test(line)) {
+    // New section
+    const sectionMatch = line.match(/^(Breakfast|Lunch|Dinner|Snack):\s*$/i);
+    if (sectionMatch) {
       if (currentSection) sections.push(currentSection);
       currentSection = {
-        title: line.replace(":", ""),
+        title: sectionMatch[1],
         items: [],
-        total: "",
+        macros: {},
       };
-    } else if (/^- Total:/i.test(line)) {
-      if (currentSection) currentSection.total = line.replace("- ", "").trim();
-    } else if (/^- /.test(line)) {
-      if (currentSection)
+      continue;
+    }
+
+    // Meal item
+    if (line.startsWith("- ")) {
+      if (currentSection) {
         currentSection.items.push(line.replace("- ", "").trim());
+      }
+      continue;
+    }
+
+    // Macronutrient breakdown
+    if (currentSection) {
+      const calMatch = line.match(/Calories:\s*(\d+)\s*kcal/i);
+      const proteinMatch = line.match(/Protein:\s*(\d+)\s*g/i);
+      const carbsMatch = line.match(/Carbohydrates:\s*(\d+)\s*g/i);
+      const fatsMatch = line.match(/Fats:\s*(\d+)\s*g/i);
+
+      if (calMatch) currentSection.macros.calories = parseInt(calMatch[1]);
+      if (proteinMatch)
+        currentSection.macros.protein = parseInt(proteinMatch[1]);
+      if (carbsMatch) currentSection.macros.carbs = parseInt(carbsMatch[1]);
+      if (fatsMatch) currentSection.macros.fats = parseInt(fatsMatch[1]);
     }
   }
 
   if (currentSection) sections.push(currentSection);
-
   return sections;
 };
 
@@ -727,20 +731,21 @@ function Page() {
 
           if (docSnap.exists()) {
             const data = docSnap.data();
+            console.log(data.mealPlan);
             const rawMealPlan = data?.mealPlan;
 
             if (typeof rawMealPlan === "string") {
-              setMealPlan(rawMealPlan); // Save raw text if you need it
+              setMealPlan(rawMealPlan); // Optional: store raw text
 
               const structured = parseMealPlan(rawMealPlan);
-              setParsedPlan(structured); // Save structured format
+              setParsedPlan(structured); // Assuming you have this state
 
               console.log("✅ Structured meal plan loaded", structured);
             } else {
-              console.log("ℹ️ No valid meal plan string found.");
+              console.log("ℹ No valid meal plan string found.");
             }
           } else {
-            console.log("ℹ️ No meal plan document found.");
+            console.log("ℹ No meal plan document found.");
           }
         } catch (err) {
           console.error("❌ Error fetching structured meal plan:", err);
@@ -833,42 +838,37 @@ function Page() {
               )}
             </div>
           </div>
+          <div className="clear"></div>
 
-          {mealPlan ? (
-            <>
-              {parsedPlan.map((section, index) => (
-                <React.Fragment key={index}>
-                  <div className="clear"></div>
-                  <div
-                    key={index}
-                    className="meal-section"
-                    style={{ color: "white" }}
-                  >
-                    <h3 className="meal-title">{section.title}</h3>
-                    <ul className="meal-items-list">
-                      {section.items.map((item, idx) => (
-                        <React.Fragment key={idx}>
-                          <li key={idx} className="meal-item">
-                            {item}
-                          </li>
-                        </React.Fragment>
-                      ))}
-                    </ul>
-                    <p className="meal-total">
-                      <strong>{section.total}</strong>
-                    </p>
+          {parsedPlan.map((section, index) => (
+            <React.Fragment key={index}>
+              <div className="meal-section" style={{ color: "white" }}>
+                <h3 className="meal-title">{section.title}</h3>
+                <ul className="meal-items-list">
+                  {section.items.map((item, idx) => (
+                    <li key={idx} className="meal-item">
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+
+                {/* Macronutrients */}
+                {section.macros && (
+                  <div className="meal-macros">
+                    <p>Calories: {section.macros.calories} kcal</p>
+                    <p>Protein: {section.macros.protein}g</p>
+                    <p>Carbs: {section.macros.carbs}g</p>
+                    <p>Fats: {section.macros.fats}g</p>
                   </div>
-                </React.Fragment>
-              ))}
-              <div className="clearLast"></div>
-            </>
-          ) : (
-            <button onClick={generateAiMealPlan}>Generate Meal Plan</button>
-          )}
+                )}
+              </div>
+              <div className="clear"></div>
+            </React.Fragment>
+          ))}
         </>
       )}
     </div>
   );
 }
 
-export default Page; // Ensure you're exporting "Page"
+export default Page; // Ensure you're exporting "Page"
