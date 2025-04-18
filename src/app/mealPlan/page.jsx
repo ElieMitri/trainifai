@@ -838,33 +838,43 @@ function Page() {
               )}
             </div>
           </div>
+
+
           <div className="clear"></div>
 
-          {parsedPlan.map((section, index) => (
-            <React.Fragment key={index}>
-              <div className="meal-section" style={{ color: "white" }}>
-                <h3 className="meal-title">{section.title}</h3>
-                <ul className="meal-items-list">
-                  {section.items.map((item, idx) => (
-                    <li key={idx} className="meal-item">
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-
-                {/* Macronutrients */}
-                {section.macros && (
-                  <div className="meal-macros">
-                    <p>Calories: {section.macros.calories} kcal</p>
-                    <p>Protein: {section.macros.protein}g</p>
-                    <p>Carbs: {section.macros.carbs}g</p>
-                    <p>Fats: {section.macros.fats}g</p>
-                  </div>
-                )}
-              </div>
-              <div className="clear"></div>
-            </React.Fragment>
-          ))}
+          {
+            mealPlan ?
+            <>
+            {parsedPlan.map((section, index) => (
+              <React.Fragment key={index}>
+                <div className="meal-section" style={{ color: "white" }}>
+                  <h3 className="meal-title">{section.title}</h3>
+                  <ul className="meal-items-list">
+                    {section.items.map((item, idx) => (
+                      <li key={idx} className="meal-item">
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+  
+                  {/* Macronutrients */}
+                  {section.macros && (
+                    <div className="meal-macros">
+                      <p>Calories: {section.macros.calories} kcal</p>
+                      <p>Protein: {section.macros.protein}g</p>
+                      <p>Carbs: {section.macros.carbs}g</p>
+                      <p>Fats: {section.macros.fats}g</p>
+                    </div>
+                  )}
+                </div>
+                <div className="clear"></div>
+              </React.Fragment>
+            ))} 
+            </>
+            :
+            <button onClick={generateAiMealPlan}>Generate Meal Plan</button>
+          }
+       
         </>
       )}
     </div>
