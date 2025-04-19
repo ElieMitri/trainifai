@@ -292,6 +292,7 @@ function App() {
   const [notSubscribed, setNotSubscribed] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
+  const [addingWeight, setAddingWeight] = useState(false);
 
   const [notification, setNotification] = useState({
     visible: false,
@@ -446,7 +447,6 @@ function App() {
     },
   };
 
-  // useEffect(() => {
   //   if (!userData?.freeTrialEndTime) {
   //     setFreeTrialActive(false); // Set to false if there is no free trial end time or no user data
   //     return;
@@ -602,29 +602,29 @@ function App() {
 
     if (!weightAdded || isNaN(weightAdded)) {
       console.error("Invalid weight input!");
+      showNotification("Please enter a valid weight.", "error");
       return;
     }
+
+    setAddingWeight(true); // Start loading
 
     const clientWeightRef = collection(
       doc(db, "weightProgress", user.uid),
       "clientWeight"
     );
-    const userRef = doc(db, "users", user.uid); // Reference to the user document
+    const userRef = doc(db, "users", user.uid);
 
     try {
-      // Get current date & ensure next month calculation is correct
       const now = new Date();
       const nextMonth = new Date(now);
       nextMonth.setMonth(now.getMonth() + 1);
       if (nextMonth.getDate() !== now.getDate()) {
-        nextMonth.setDate(0); // Set to last day of next month if shifted
+        nextMonth.setDate(0);
       }
 
-      // Extract current month & year
       const currentMonth = now.getMonth();
       const currentYear = now.getFullYear();
 
-      // Query all weight entries
       const querySnapshot = await getDocs(clientWeightRef);
       let existingDoc = null;
 
@@ -644,33 +644,34 @@ function App() {
       });
 
       if (existingDoc) {
-        // If an entry already exists for this month, update it
         const weightDocRef = doc(clientWeightRef, existingDoc.id);
         await updateDoc(weightDocRef, {
           weight: Number(weightAdded),
           date: Timestamp.fromDate(now),
         });
-        // console.log("✅ Updated existing weight entry.");
+        showNotification("Weight updated successfully!", "success");
       } else {
-        // If no entry exists for this month, create a new one
         await addDoc(clientWeightRef, {
           weight: Number(weightAdded),
           date: Timestamp.fromDate(now),
         });
-        // console.log("✅ Added new weight entry.");
+        showNotification("New weight added!", "success");
       }
 
-      // Update user document with new weight and next edit date
       await updateDoc(userRef, {
         editedWeight: serverTimestamp(),
         weight: Number(weightAdded),
-        reEditWeight: Timestamp.fromDate(nextMonth), // ✅ Correct next edit date
+        reEditWeight: Timestamp.fromDate(nextMonth),
       });
 
-      // console.log("✅ User weight updated!");
-      showNotification("Workout plan generated successfully!", "success");
+      setTimeout(() => {
+        setOpenSettingsModal(false);
+      }, 1500); // delay in milliseconds (e.g., 1.5 seconds)
     } catch (error) {
-      // console.error("❌ Error updating weight:", error);
+      console.error("❌ Error updating weight:", error);
+      showNotification("Couldn't update weight. Please try again.", "error");
+    } finally {
+      setAddingWeight(false); // Always stop loading
     }
   }
 
@@ -765,6 +766,12 @@ function App() {
                     Update Password
                   </button>
                 </div> */}
+                <Notification
+                  type={notification.type}
+                  message={notification.message}
+                  isVisible={notification.visible}
+                  onClose={hideNotification}
+                />
 
                 {userData && userData.paid ? (
                   <div className="settings-information-item">
@@ -777,12 +784,18 @@ function App() {
                         onChange={(e) => setWeightAdded(e.target.value)}
                         placeholder="Weight"
                       />
-                      <button
-                        className="settings-action-button settings-weight-button"
-                        onClick={editOrAddWeight}
-                      >
-                        Update
-                      </button>
+                      {addingWeight ? (
+                        <button className="settings-action-button settings-weight-button">
+                          Processing...
+                        </button>
+                      ) : (
+                        <button
+                          className="settings-action-button settings-weight-button"
+                          onClick={editOrAddWeight}
+                        >
+                          Update
+                        </button>
+                      )}
                     </div>
                   </div>
                 ) : (
@@ -1134,7 +1147,7 @@ function App() {
             <div className="pricing-card">
               <div className="price-tier">Yearly Premium Plan</div>
               <div className="price">
-                $149.99 <span>/year</span>
+                $199.99 <span>/year</span>
               </div>
               <ul className="pricing-features">
                 <li className="included">Advanced meal plans</li>
@@ -1193,10 +1206,10 @@ function App() {
                 <a href="/contact">Contact</a>
               </li> */}
               <li>
-                <a onClick={() => setShowTerms(true)}>Terms of Service</a>
+                <a href="/TermsOfServices">Terms of Service</a>
               </li>
               <li>
-                <a onClick={() => setShowPrivacy(true)}>Privacy Policy</a>
+                <a href="/PrivacyPolicy">Privacy Policy</a>
               </li>
             </ul>
           </div>
