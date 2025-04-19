@@ -48,6 +48,7 @@ import logo from "../../enhanced-IMG_3755.jpeg.png";
 import Notification from "./components/Notification";
 import PrivacyModal from "./components/PrivacyModal";
 import TermsModal from "./components/TermsModal";
+import { FaTiktok } from "react-icons/fa";
 
 function Modal({
   isOpen,
@@ -1230,13 +1231,13 @@ function App() {
               >
                 <Instagram />
               </a>
-              {/* <a
+              <a
                 href="https://twitter.com/trainifai"
                 target="_blank"
                 rel="noreferrer"
               >
-                Twitter
-              </a> */}
+                <FaTiktok className="tiktokLogo" />
+              </a>
               <a href="mailto:trainifai@gmail.com.com">
                 <Mail />
               </a>

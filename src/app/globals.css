@@ -4511,3 +4511,7 @@ a[href^="mailto:"]:hover {
 .privacy-introduction {
   color: black;
 }
+
+.tiktokLogo {
+  font-size: 23px;
+}
