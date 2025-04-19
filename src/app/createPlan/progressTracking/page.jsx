@@ -1,18 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import {
-  Activity,
-  Dumbbell,
-  Home,
-  User,
-  Utensils,
-  X,
-  ArrowLeft,
-  BadgePlus,
-  Link,
-} from "lucide-react";
-import { Line, Pie } from "react-chartjs-2"; // Import the Line component from react-chartjs-2
+import { ArrowLeft, Dumbbell } from "lucide-react";
+import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -22,35 +12,13 @@ import {
   Title,
   Tooltip,
   Legend,
-  ArcElement,
 } from "chart.js";
 
-// import './styles.css';
-import {
-  setDoc,
-  doc,
-  collection,
-  serverTimestamp,
-  addDoc,
-  getDoc,
-  updateDoc,
-  getFirestore,
-  getDocs,
-  Timestamp,
-  onSnapshot,
-} from "firebase/firestore";
+import { collection, doc, onSnapshot, Timestamp } from "firebase/firestore";
 import { db, auth } from "../../../../firebase";
-import {
-  signInWithEmailAndPassword,
-  onAuthStateChanged,
-  createUserWithEmailAndPassword,
-  getAuth,
-  updateProfile,
-  signOut as firebaseSignOut,
-} from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
 
 ChartJS.register(
-  ArcElement,
   CategoryScale,
   LinearScale,
   PointElement,
@@ -61,231 +29,75 @@ ChartJS.register(
 );
 
 function Page() {
-  const [step, setStep] = useState(1);
   const [lineData, setLineData] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [labels, setLabels] = useState([]);
-  const [userData, setUserData] = useState({
-    age: "",
-    weight: "",
-    height: "",
-    days: "",
-    gender: "",
-    fitnessGoal: "",
-    dietaryPreference: "",
-    activityLevel: "",
-    workoutLocation: "",
-  });
-
-  const [generatedPlan, setGeneratedPlan] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
-  const [chartProgress, setChartProgress] = useState(null);
-  const [macros, setMacros] = useState(null);
-  const [weightProgress, setWeightProgress] = useState(null);
-  const handleInputChange = (e) => {
-    setUserData({ ...userData, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    try {
-      // 🔹 Save user details to Firestore
-      await setDoc(doc(db, "personDetails", user.uid), {
-        displayName: user.displayName,
-        date: serverTimestamp(),
-        age: userData.age,
-        weight: userData.weight,
-        height: userData.height,
-        days: userData.days,
-        gender: userData.gender,
-        fitnessGoal: userData.fitnessGoal,
-        activityLevel: userData.activityLevel,
-        dietaryPreference: userData.dietaryPreference,
-        workoutLocation: userData.workoutLocation,
-      });
-    } catch (error) {
-      console.error("Error creating account:", error.message);
-      alert(error.message);
-    } finally {
-      // setLoading(false);
-    }
-  };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
-      // console.log("User:", currentUser);
-
-      if (currentUser) {
-        try {
-          const userDocRef = doc(db, "users", currentUser.uid);
-          const userDocSnap = await getDoc(userDocRef);
-
-          if (userDocSnap.exists()) {
-            setUserData(userDocSnap.data()); // ✅ Update userData immediately
-          } else {
-            // console.log("No such user found!");
-            setUserData(null);
-          }
-        } catch (error) {
-          console.error("Error fetching user data:", error);
-          setUserData(null);
-        }
-      } else {
-        setUserData(null);
-      }
     });
-
     return () => unsubscribe();
   }, []);
 
   useEffect(() => {
-    // Ensure 'user' exists and has a valid 'uid'
-    if (!user || !user.uid) {
-      // console.log("User is not valid or user.uid is missing");
-      return;
-    }
+    if (!user?.uid) return;
 
-    // Set loading to true before fetching
-    setLoading(true);
+    const clientWeightRef = collection(
+      db,
+      "weightProgress",
+      user.uid,
+      "clientWeight"
+    );
 
-    // Function to fetch document from Firestore
-    const fetchNutritionData = async () => {
-      try {
-        // console.log("Fetching data for user ID:", user.uid);
-        const docRef = doc(db, "personMacros", user.uid); // Firestore document reference
-
-        // Fetch the document from Firestore
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-          // console.log("Document data:", docSnap.data());
-          setMacros(docSnap.data()); // Update the macros state with the fetched data
-          const nutritionChartData = {
-            labels: ["Protein", "Carbs", "Fats"],
-            datasets: [
-              {
-                data: [150, 300, 80], // manually set values here
-                backgroundColor: [
-                  "rgba(255, 99, 132, 0.8)",
-                  "rgba(54, 162, 235, 0.8)",
-                  "rgba(255, 206, 86, 0.8)",
-                ],
-                borderColor: [
-                  "rgba(255, 99, 132, 1)",
-                  "rgba(54, 162, 235, 1)",
-                  "rgba(255, 206, 86, 1)",
-                ],
-                borderWidth: 1,
-              },
-            ],
-          };
-        } else {
-          // console.log("No such document!");
-        }
-      } catch (error) {
-        console.error("Error fetching document:", error); // Log errors
-      } finally {
-        setLoading(false); // Set loading to false when done
+    const unsubscribe = onSnapshot(clientWeightRef, (querySnapshot) => {
+      if (querySnapshot.empty) {
+        setLineData([]);
+        setLabels([]);
+        setLoading(false);
+        return;
       }
-    };
 
-    fetchNutritionData(); // Call the async function to fetch data
-  }, [user]); // The effect runs when 'user' changes
+      const docs = querySnapshot.docs.map((doc) => {
+        const data = doc.data();
+        const date =
+          data.date instanceof Timestamp
+            ? data.date.toDate()
+            : new Date(data.date);
+        return { weight: data.weight, date };
+      });
 
-  useEffect(() => {
-    if (!user?.uid) {
-      // console.log("User is not valid or user.uid is missing");
-      return;
-    }
+      const sorted = docs.sort((a, b) => a.date - b.date);
+      setLineData(sorted.map((item) => item.weight));
+      setLabels(sorted.map((item) => item.date.toLocaleDateString()));
+      setLoading(false);
+    });
 
-    setLoading(true);
+    return () => unsubscribe();
+  }, [user]);
 
-    const fetchAllDocuments = () => {
-      try {
-        // console.log("Fetching all documents from clientWeight subcollection");
-
-        // Reference to the 'clientWeight' subcollection under 'weightProgress/{user.uid}'
-        const clientWeightRef = collection(
-          db,
-          "weightProgress",
-          user.uid,
-          "clientWeight"
-        );
-
-        // Set up a real-time listener with onSnapshot
-        const unsubscribe = onSnapshot(clientWeightRef, (querySnapshot) => {
-          // Check if documents exist
-          if (querySnapshot.empty) {
-            // console.log(
-            //   "No documents found in the clientWeight subcollection."
-            // );
-            setLoading(false);
-            return;
-          }
-
-          // Extract and store the data from each document
-          const allDocuments = querySnapshot.docs.map((doc) => {
-            const data = doc.data();
-            // console.log("Document data:", data); // Log document data to check
-
-            // Check if 'date' is a Firestore Timestamp and convert it to a Date object
-            const validDate =
-              data.date instanceof Timestamp
-                ? data.date.toDate()
-                : new Date(data.date);
-
-            return {
-              ...data,
-              date: validDate,
-            };
-          });
-
-          // Ensure data is sorted based on the date field
-          const sortedDocuments = allDocuments.sort((a, b) => a.date - b.date);
-
-          // Collect the weight data and corresponding dates
-          const weightArray = sortedDocuments.map((doc) => doc.weight);
-          const dateLabels = sortedDocuments.map(
-            (doc) => doc.date.toLocaleDateString() || "Invalid Date"
-          );
-
-          // Set the state with the sorted data for the charts
-          setLineData(weightArray);
-          setLabels(dateLabels);
-
-          // console.log("Fetched all documents:", sortedDocuments);
-        });
-
-        // Clean up the listener when component unmounts or user changes
-        return () => unsubscribe();
-      } catch (error) {
-        console.error("Error fetching documents:", error);
-      } finally {
-        setLoading(false); // Set loading to false once data is fetched
-      }
-    };
-
-    fetchAllDocuments(); // Call the function to set up the listener
-  }, [user?.uid, db]); // Only re-run the effect when user or db changes
-
-  // Chart data structure
-  const weightChart = {
-    labels: labels, // Now this will contain the actual dates
+  const weightChartData = {
+    labels,
     datasets: [
       {
         label: "My Weight",
-        data: lineData, // This will contain the weight data for those dates
+        data: lineData,
         fill: false,
-        borderColor: "rgb(200, 150, 255)", // Lighter purple
-        tension: 0.1,
+        borderColor: "rgb(200, 150, 255)",
+        tension: 0.2,
       },
     ],
   };
 
+  const weightChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+  };
+
   return (
     <div className="min-h-screen">
+      {/* ✅ KEEPING ORIGINAL NAVBAR */}
       <nav className="nav">
         <div className="nav-container">
           <div className="nav-brand">
@@ -298,46 +110,22 @@ function Page() {
         </div>
       </nav>
 
+      {/* ✅ MAIN CHART SECTION */}
       <div className="main-wrapper">
-        <main className="main">
+        <main className="main-progress">
           <div className="container">
-            {/* <div className="plan-container">
-              <div className="plan-section"> */}
             {loading ? (
-              <></>
+              <p className="loading-text">Loading your progress...</p>
             ) : (
-              <div>
-                {/* <div className="nutrition-chart"> */}
-                <Line data={weightChart} />
-                {/* <h3 className="chart-title">Daily Nutrition Breakdown</h3> */}
-                {/* <Pie data={nutritionChartData} /> */}
-                <div
-                  style={{
-                    marginTop: "1rem",
-                    textAlign: "center",
-                    color: "black",
-                  }}
-                >
-                  {/* {macros ? (
-                          <>
-                            <p>Total Calories: {macros.calories} kcal</p>
-                            <p>Protein: {macros.protein} g</p>
-                            <p>Carbs: {macros.carbs} g</p>
-                            <p>Fats: {macros.fats} g</p>
-                          </>
-                        ) : (
-                          <p>Loading macros data...</p> // Display a message while macros is still loading
-                        )} */}
-                </div>
-                {/* </div> */}
+              <div className="chart-container">
+                <Line data={weightChartData} options={weightChartOptions} />
               </div>
             )}
-            {/* </div>
-            </div> */}
           </div>
         </main>
       </div>
 
+      {/* ✅ KEEPING ORIGINAL FOOTER */}
       <footer className="footer">
         <div className="container">
           <div className="footer-text">

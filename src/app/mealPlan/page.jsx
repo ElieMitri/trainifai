@@ -35,56 +35,72 @@ const parseMealPlan = (text) => {
   const lines = text
     .split("\n")
     .map((line) => line.trim())
-    .filter(Boolean);
+    .filter(Boolean)
+    .filter((line) => {
+      const lower = line.toLowerCase();
+      return (
+        !lower.startsWith("total:") &&
+        !/^protein:\s*\d+\s*g$/i.test(lower) &&
+        !/^carbohydrates?:\s*\d+\s*g$/i.test(lower) &&
+        !/^fats?:\s*\d+\s*g$/i.test(lower) &&
+        !lower.includes("this meal plan meets") &&
+        !lower.includes("estimated macronutrient breakdown") &&
+        !lower.includes("adjust portion sizes") &&
+        !lower.startsWith("calories:") &&
+        !lower.includes("kcal")
+      );
+    });
+
+  const sectionOrder = [
+    "Breakfast",
+    "Morning Snack",
+    "Lunch",
+    "Afternoon Snack",
+    "Dinner",
+  ];
 
   const sections = [];
   let currentSection = null;
-
-  const totalStopKeywords = ["total macronutrient breakdown", "note:"];
+  let snackCount = 0;
 
   for (let line of lines) {
-    const lower = line.toLowerCase();
+    // ✅ Handle lines like "**Snack:**"
+    const isSectionHeader = /^[\*\s]*[a-zA-Z\s]+:/.test(line);
+    if (isSectionHeader) {
+      const rawTitle = line
+        .replace(/[\*\:]/g, "")
+        .trim()
+        .toLowerCase();
 
-    // Stop at final totals or notes
-    if (totalStopKeywords.some((k) => lower.startsWith(k))) break;
-
-    // New section
-    const sectionMatch = line.match(/^(Breakfast|Lunch|Dinner|Snack):\s*$/i);
-    if (sectionMatch) {
-      if (currentSection) sections.push(currentSection);
-      currentSection = {
-        title: sectionMatch[1],
-        items: [],
-        macros: {},
-      };
-      continue;
-    }
-
-    // Meal item
-    if (line.startsWith("- ")) {
-      if (currentSection) {
-        currentSection.items.push(line.replace("- ", "").trim());
+      let title;
+      if (rawTitle === "snack" || rawTitle === "snacks") {
+        title = snackCount === 0 ? "Morning Snack" : "Afternoon Snack";
+        snackCount++;
+      } else {
+        title = rawTitle
+          .split(" ")
+          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+          .join(" ");
       }
+
+      currentSection = { title, items: [] };
+      sections.push(currentSection);
       continue;
     }
 
-    // Macronutrient breakdown
+    // ✅ Add item to current section
     if (currentSection) {
-      const calMatch = line.match(/Calories:\s*(\d+)\s*kcal/i);
-      const proteinMatch = line.match(/Protein:\s*(\d+)\s*g/i);
-      const carbsMatch = line.match(/Carbohydrates:\s*(\d+)\s*g/i);
-      const fatsMatch = line.match(/Fats:\s*(\d+)\s*g/i);
-
-      if (calMatch) currentSection.macros.calories = parseInt(calMatch[1]);
-      if (proteinMatch)
-        currentSection.macros.protein = parseInt(proteinMatch[1]);
-      if (carbsMatch) currentSection.macros.carbs = parseInt(carbsMatch[1]);
-      if (fatsMatch) currentSection.macros.fats = parseInt(fatsMatch[1]);
+      const item = line.replace(/^[-•]\s*/, "");
+      currentSection.items.push(item);
     }
   }
 
-  if (currentSection) sections.push(currentSection);
-  return sections;
+  // ✅ Return sorted output based on intended section order
+  const sorted = sectionOrder
+    .map((title) => sections.find((s) => s.title === title))
+    .filter(Boolean);
+
+  return sorted;
 };
 
 function Page() {
@@ -100,7 +116,7 @@ function Page() {
   const [user, setUser] = useState(null);
   const [userData, setUserData] = useState(null);
   const [isMinimized, setIsMinimized] = useState(true);
-  const [parsedPlan, setParsedPlan] = useState([]);
+  const [parsedPlan, setParsedPlan] = useState("");
   const [todaysMeals, setTodaysMeals] = useState([]);
   const [notification, setNotification] = useState({
     visible: false,
@@ -620,7 +636,6 @@ function Page() {
     try {
       setLoading(true);
       setError("");
-      setMealPlan(""); // Clear existing plan
 
       const currentUser = auth.currentUser;
       if (!currentUser || !currentUser.uid) {
@@ -628,6 +643,27 @@ function Page() {
         setLoading(false);
         return;
       }
+
+      // Check if it's a new day and clear the old plan
+      const mealPlanRef = doc(db, "mealPlans", currentUser.uid);
+      const existingMealDoc = await getDoc(mealPlanRef);
+      const today = new Date().toDateString();
+
+      if (existingMealDoc.exists()) {
+        const data = existingMealDoc.data();
+        const savedDay = data.createdDay;
+
+        if (savedDay !== today) {
+          // It's a new day — reset the saved plan
+          await setDoc(mealPlanRef, {}, { merge: true }); // clear contents
+          setMealPlan(""); // clear UI state
+        } else {
+          // Already has a plan for today — return early or allow regeneration
+          // return; // Optional: uncomment if you want to block regeneration
+        }
+      }
+
+      setMealPlan(""); // Clear existing plan in UI state
 
       // Validate user input
       const isValid =
@@ -670,11 +706,11 @@ function Page() {
         setMealPlan(generatedPlan);
 
         try {
-          const mealPlanRef = doc(db, "mealPlans", currentUser.uid);
           await setDoc(mealPlanRef, {
             ...relevantData,
             mealPlan: generatedPlan,
             createdAt: new Date(),
+            createdDay: today, // 👈 Save date string
           });
 
           console.log("✅ Meal plan saved to Firebase");
@@ -723,38 +759,49 @@ function Page() {
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user?.uid) {
-        try {
-          const mealPlanRef = doc(db, "mealPlans", user.uid);
-          const docSnap = await getDoc(mealPlanRef);
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      if (!user?.uid) return;
 
-          if (docSnap.exists()) {
-            const data = docSnap.data();
-            console.log(data.mealPlan);
-            const rawMealPlan = data?.mealPlan;
+      const mealPlanRef = doc(db, "mealPlans", user.uid);
 
-            if (typeof rawMealPlan === "string") {
-              setMealPlan(rawMealPlan); // Optional: store raw text
-
-              const structured = parseMealPlan(rawMealPlan);
-              setParsedPlan(structured); // Assuming you have this state
-
-              console.log("✅ Structured meal plan loaded", structured);
-            } else {
-              console.log("ℹ No valid meal plan string found.");
-            }
-          } else {
-            console.log("ℹ No meal plan document found.");
+      // 👇 Real-time Firestore listener
+      const unsubscribePlan = onSnapshot(
+        mealPlanRef,
+        (docSnap) => {
+          if (!docSnap.exists()) {
+            console.log("ℹ️ No meal plan document found.");
+            return;
           }
-        } catch (err) {
-          console.error("❌ Error fetching structured meal plan:", err);
+
+          const data = docSnap.data();
+          const rawMealPlan = data?.mealPlan;
+
+          if (
+            typeof rawMealPlan === "string" &&
+            rawMealPlan.trim().length > 0
+          ) {
+            setMealPlan(rawMealPlan);
+
+            const structured = parseMealPlan(rawMealPlan);
+            setParsedPlan(structured);
+
+            console.log("✅ Structured meal plan loaded", structured);
+          } else {
+            console.log("ℹ️ Meal plan exists but is not a valid string.");
+          }
+        },
+        (err) => {
+          console.error("❌ Firestore listener error:", err);
           setError("Failed to load your saved meal plan.");
         }
-      }
+      );
+
+      // Unsubscribe Firestore listener when auth changes
+      return unsubscribePlan;
     });
 
-    return () => unsubscribe();
+    // Unsubscribe auth listener when component unmounts
+    return () => unsubscribeAuth();
   }, []);
 
   return (
@@ -838,37 +885,52 @@ function Page() {
               )}
             </div>
           </div>
+          {mealPlan ? (
+            <div className="mealWrapper">
+              <div className="clear"></div>
+              {/* {mealPlan} */}
+              {Array.isArray(parsedPlan) &&
+                parsedPlan.map((section, index) => (
+                  <React.Fragment key={index}>
+                    <div className="meal-section">
+                      <h3 className="meal-title">{section.title}</h3>
+                      <ul className="meal-list">
+                        {section.items.map((item, i) => (
+                          <li key={i}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="clear"></div>
+                  </React.Fragment>
+                ))}
 
-
-          <div className="clear"></div>
-
-          {
-            mealPlan ?
-            <>
-            {parsedPlan.map((section, index) => (
-              <React.Fragment key={index}>
-                <div className="meal-section" style={{ color: "white" }}>
-                  <h3 className="meal-title">{section.title}</h3>
-                  <ul className="meal-items-list">
-                    {section.items.map((item, idx) => (
-                      <li key={idx} className="meal-item">
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="clear"></div>
-              </React.Fragment>
-            ))} 
-            </>
-            :
+              {/* {Array.isArray(parsedPlan) &&
+                parsedPlan.map((section, index) => (
+                  <React.Fragment key={index}>
+                    <div className="meal-section" >
+                      <h3 className="meal-title">
+                        {section.title.charAt(0).toUpperCase() +
+                          section.title.slice(1)}
+                      </h3>
+                      <ul className="meal-list">
+                        {section.items.map((item, i) => (
+                          <li className="mealLi" key={i}>
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="clear"></div>
+                  </React.Fragment>
+                ))} */}
+            </div>
+          ) : (
             <button onClick={generateAiMealPlan}>Generate Meal Plan</button>
-          }
-       
+          )}
         </>
       )}
     </div>
   );
 }
 
-export default Page; // Ensure you're exporting "Page"
+export default Page; // Ensure you're exporting "Page"
