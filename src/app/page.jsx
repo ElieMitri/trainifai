@@ -1232,7 +1232,7 @@ function App() {
                 <Instagram />
               </a>
               <a
-                href="https://tiktok.com/trainif.ai"
+                href="https://www.tiktok.com/@trainif.ai"
                 target="_blank"
                 rel="noreferrer"
               >
