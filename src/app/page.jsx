@@ -1225,7 +1225,7 @@ function App() {
             <h4>Stay Connected</h4>
             <div className="social-icons">
               <a
-                href="https://instagram.com/trainif.ai"
+                href="https://www.instagram.com/trainif.ai"
                 target="_blank"
                 rel="noreferrer"
               >
