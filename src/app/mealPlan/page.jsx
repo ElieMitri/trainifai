@@ -11,7 +11,26 @@ import {
   ArrowLeft,
   BadgePlus,
   Link,
+  Instagram,
+  Mail,
 } from "lucide-react";
+import { GiMeal } from "react-icons/gi";
+import { FaTiktok } from "react-icons/fa";
+import PrivacyModal from "../components/PrivacyModal";
+import TermsModal from "../components/TermsModal";
+// import {
+//   Activity,
+//   Dumbbell,
+//   Home,
+//   User,
+//   Utensils,
+//   X,
+//   Crown,
+//   Settings,
+//   LogOut,
+//   Instagram,
+//   Mail,
+// } from "lucide-react";
 import {
   doc,
   getDoc,
@@ -31,76 +50,66 @@ import { useRouter } from "next/navigation";
 import Notification from "../components/Notification";
 import axios from "axios";
 
-const parseMealPlan = (text) => {
-  const lines = text
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .filter((line) => {
-      const lower = line.toLowerCase();
-      return (
-        !lower.startsWith("total:") &&
-        !/^protein:\s*\d+\s*g$/i.test(lower) &&
-        !/^carbohydrates?:\s*\d+\s*g$/i.test(lower) &&
-        !/^fats?:\s*\d+\s*g$/i.test(lower) &&
-        !lower.includes("this meal plan meets") &&
-        !lower.includes("estimated macronutrient breakdown") &&
-        !lower.includes("adjust portion sizes") &&
-        !lower.startsWith("calories:") &&
-        !lower.includes("kcal")
-      );
-    });
+const parseMealPlan = (rawText) => {
+  const sections = rawText
+    .split(
+      /(?=Breakfast:|Snack:|Lunch:|Dinner:|Total Macronutrient breakdown for the day:)/g
+    )
+    .map((s) => s.trim());
 
-  const sectionOrder = [
-    "Breakfast",
-    "Morning Snack",
-    "Lunch",
-    "Afternoon Snack",
-    "Dinner",
-  ];
+  const result = [];
 
-  const sections = [];
-  let currentSection = null;
-  let snackCount = 0;
+  sections.forEach((section) => {
+    const titleMatch = section.match(/^(Breakfast|Snack|Lunch|Dinner)/i);
+    const isTotal = section.startsWith("Total Macronutrient");
 
-  for (let line of lines) {
-    // ✅ Handle lines like "**Snack:**"
-    const isSectionHeader = /^[\*\s]*[a-zA-Z\s]+:/.test(line);
-    if (isSectionHeader) {
-      const rawTitle = line
-        .replace(/[\*\:]/g, "")
+    if (titleMatch) {
+      const title = titleMatch[0];
+
+      const items = section
+        .split("Estimated Macronutrient breakdown:")[0]
+        .replace(`${title}:`, "")
         .trim()
-        .toLowerCase();
+        .split("-")
+        .map((i) => i.trim())
+        .filter(Boolean);
 
-      let title;
-      if (rawTitle === "snack" || rawTitle === "snacks") {
-        title = snackCount === 0 ? "Morning Snack" : "Afternoon Snack";
-        snackCount++;
-      } else {
-        title = rawTitle
-          .split(" ")
-          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-          .join(" ");
-      }
+      const macrosMatch = section.match(
+        /Calories:\s*(\d+)\s*kcal[\s\S]*?Protein:\s*(\d+)g[\s\S]*?Carbohydrates:\s*(\d+)g[\s\S]*?Fats:\s*(\d+)g/
+      );
 
-      currentSection = { title, items: [] };
-      sections.push(currentSection);
-      continue;
+      result.push({
+        title,
+        items,
+        macros: macrosMatch
+          ? {
+              calories: `${macrosMatch[1]} kcal`,
+              protein: `${macrosMatch[2]}g`,
+              carbs: `${macrosMatch[3]}g`,
+              fats: `${macrosMatch[4]}g`,
+            }
+          : null,
+      });
+    } else if (isTotal) {
+      const macrosMatch = section.match(
+        /Calories:\s*(\d+)\s*kcal[\s\S]*?Protein:\s*(\d+)g[\s\S]*?Carbohydrates:\s*(\d+)g[\s\S]*?Fats:\s*(\d+)g/
+      );
+
+      result.push({
+        title: "Total for the Day",
+        macros: macrosMatch
+          ? {
+              calories: `${macrosMatch[1]} kcal`,
+              protein: `${macrosMatch[2]}g`,
+              carbs: `${macrosMatch[3]}g`,
+              fats: `${macrosMatch[4]}g`,
+            }
+          : null,
+      });
     }
+  });
 
-    // ✅ Add item to current section
-    if (currentSection) {
-      const item = line.replace(/^[-•]\s*/, "");
-      currentSection.items.push(item);
-    }
-  }
-
-  // ✅ Return sorted output based on intended section order
-  const sorted = sectionOrder
-    .map((title) => sections.find((s) => s.title === title))
-    .filter(Boolean);
-
-  return sorted;
+  return result;
 };
 
 function Page() {
@@ -118,6 +127,10 @@ function Page() {
   const [isMinimized, setIsMinimized] = useState(true);
   const [parsedPlan, setParsedPlan] = useState("");
   const [todaysMeals, setTodaysMeals] = useState([]);
+  const [showPrivacy, setShowPrivacy] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
+  const [showGenerateButton, setShowGenerateButton] = useState(true);
+
   const [notification, setNotification] = useState({
     visible: false,
     type: "info",
@@ -178,216 +191,6 @@ function Page() {
     setIsMinimized(!isMinimized);
   };
 
-  const generateMealPlan = () => {
-    return {
-      weekStart: new Date().toISOString().split("T")[0], // Today's date
-      createdAt: Timestamp.now(), // Timestamp for Firebase
-      meals: [
-        {
-          day: "Monday",
-          breakfast: {
-            name: "Oatmeal",
-            calories: 250,
-            protein: 8,
-            carbs: 45,
-            fats: 5,
-          },
-          lunch: {
-            name: "Chicken Salad",
-            calories: 400,
-            protein: 35,
-            carbs: 30,
-            fats: 12,
-          },
-          dinner: {
-            name: "Grilled Fish",
-            calories: 450,
-            protein: 40,
-            carbs: 20,
-            fats: 15,
-          },
-        },
-        {
-          day: "Tuesday",
-          breakfast: {
-            name: "Scrambled Eggs",
-            calories: 300,
-            protein: 20,
-            carbs: 5,
-            fats: 20,
-          },
-          lunch: {
-            name: "Turkey Wrap",
-            calories: 450,
-            protein: 30,
-            carbs: 50,
-            fats: 10,
-          },
-          dinner: {
-            name: "Pasta",
-            calories: 500,
-            protein: 25,
-            carbs: 60,
-            fats: 15,
-          },
-        },
-        {
-          day: "Wednesday",
-          breakfast: {
-            name: "Pancakes",
-            calories: 350,
-            protein: 10,
-            carbs: 60,
-            fats: 8,
-          },
-          lunch: {
-            name: "Caesar Salad",
-            calories: 350,
-            protein: 25,
-            carbs: 15,
-            fats: 20,
-          },
-          dinner: {
-            name: "Steak",
-            calories: 600,
-            protein: 50,
-            carbs: 10,
-            fats: 30,
-          },
-        },
-        {
-          day: "Thursday",
-          breakfast: {
-            name: "Smoothie",
-            calories: 200,
-            protein: 15,
-            carbs: 30,
-            fats: 5,
-          },
-          lunch: {
-            name: "Quinoa Bowl",
-            calories: 400,
-            protein: 25,
-            carbs: 50,
-            fats: 10,
-          },
-          dinner: {
-            name: "Tacos",
-            calories: 500,
-            protein: 30,
-            carbs: 50,
-            fats: 20,
-          },
-        },
-        {
-          day: "Friday",
-          breakfast: {
-            name: "Toast & Avocado",
-            calories: 350,
-            protein: 10,
-            carbs: 40,
-            fats: 15,
-          },
-          lunch: {
-            name: "Soup & Sandwich",
-            calories: 400,
-            protein: 25,
-            carbs: 45,
-            fats: 12,
-          },
-          dinner: {
-            name: "Sushi",
-            calories: 450,
-            protein: 35,
-            carbs: 55,
-            fats: 10,
-          },
-        },
-        {
-          day: "Saturday",
-          breakfast: {
-            name: "Yogurt & Granola",
-            calories: 300,
-            protein: 15,
-            carbs: 50,
-            fats: 8,
-          },
-          lunch: {
-            name: "Pizza",
-            calories: 600,
-            protein: 30,
-            carbs: 70,
-            fats: 25,
-          },
-          dinner: {
-            name: "BBQ Chicken",
-            calories: 550,
-            protein: 45,
-            carbs: 35,
-            fats: 18,
-          },
-        },
-        {
-          day: "Sunday",
-          breakfast: {
-            name: "Bagel & Cream Cheese",
-            calories: 400,
-            protein: 12,
-            carbs: 60,
-            fats: 15,
-          },
-          lunch: {
-            name: "Pasta Salad",
-            calories: 450,
-            protein: 20,
-            carbs: 55,
-            fats: 18,
-          },
-          dinner: {
-            name: "Roast Beef",
-            calories: 600,
-            protein: 50,
-            carbs: 25,
-            fats: 30,
-          },
-        },
-      ],
-    };
-  };
-
-  const saveMealPlan = async () => {
-    const currentUser = auth.currentUser;
-
-    if (!currentUser) {
-      alert("You must be logged in to save a meal plan.");
-      return;
-    }
-
-    const mealPlan = generateMealPlan();
-
-    try {
-      // Save the meal plan under the user's subcollection
-      const docRef = await addDoc(
-        collection(db, "mealPlans", currentUser.uid, "weeklyPlans"),
-        mealPlan
-      );
-      // console.log("Meal plan saved with ID: ", docRef.id);
-
-      // Update the user's document to indicate a meal plan was generated
-      const userDocRef = doc(db, "users", currentUser.uid);
-      await updateDoc(userDocRef, {
-        generatedMealPlan: true,
-      });
-
-      // alert("Meal plan saved and user updated!");
-      showNotification("Meal plan generated successfully!", "success");
-    } catch (error) {
-      console.error("Error saving meal plan or updating user:", error);
-      alert("Failed to save meal plan.");
-    }
-  };
-
-  // const generateAndSaveMealPlan = async () => {
   //   if (!user) {
   //     alert("No user found!");
   //     return;
@@ -644,10 +447,17 @@ function Page() {
         return;
       }
 
-      // Check if it's a new day and clear the old plan
-      const mealPlanRef = doc(db, "mealPlans", currentUser.uid);
-      const existingMealDoc = await getDoc(mealPlanRef);
       const today = new Date().toDateString();
+
+      // ✅ FIXED: Use 'today' as document ID inside 'allMeals' subcollection
+      const mealPlanRef = doc(
+        db,
+        "mealPlans",
+        currentUser.uid,
+        "allMeals",
+        today
+      );
+      const existingMealDoc = await getDoc(mealPlanRef);
 
       if (existingMealDoc.exists()) {
         const data = existingMealDoc.data();
@@ -762,47 +572,72 @@ function Page() {
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       if (!user?.uid) return;
 
-      const mealPlanRef = doc(db, "mealPlans", user.uid);
+      const today = new Date().toDateString();
 
-      // 👇 Real-time Firestore listener
+      // const tomorrow = new Date();
+      // tomorrow.setDate(tomorrow.getDate() + 1);
+      // const fakeToday = tomorrow.toDateString();
+
+      const mealPlanRef = doc(db, "mealPlans", user.uid, "allMeals", today); // 👈 doc for today only
+
+      // 👇 Real-time Firestore listener for today’s plan
       const unsubscribePlan = onSnapshot(
         mealPlanRef,
         (docSnap) => {
           if (!docSnap.exists()) {
-            console.log("ℹ️ No meal plan document found.");
+            console.log("ℹ️ No meal plan found for today.");
+            setMealPlan("");
+            setParsedPlan([]);
+            setShowGenerateButton(true); // 👈 show "Generate" if no plan
             return;
           }
 
           const data = docSnap.data();
           const rawMealPlan = data?.mealPlan;
+          const savedDay = data?.createdDay;
 
           if (
             typeof rawMealPlan === "string" &&
             rawMealPlan.trim().length > 0
           ) {
             setMealPlan(rawMealPlan);
+            setParsedPlan(parseMealPlan(rawMealPlan));
 
-            const structured = parseMealPlan(rawMealPlan);
-            setParsedPlan(structured);
+            console.log("✅ Structured meal plan loaded");
 
-            console.log("✅ Structured meal plan loaded", structured);
+            if (savedDay !== today) {
+              setShowGenerateButton(true); // 👈 it's an old plan, allow regenerate
+            } else {
+              setShowGenerateButton(false); // 👈 plan is fresh, hide the button
+            }
           } else {
             console.log("ℹ️ Meal plan exists but is not a valid string.");
+            setMealPlan("");
+            setParsedPlan([]);
+            setShowGenerateButton(true);
           }
         },
         (err) => {
           console.error("❌ Firestore listener error:", err);
           setError("Failed to load your saved meal plan.");
+          setShowGenerateButton(true);
         }
       );
 
-      // Unsubscribe Firestore listener when auth changes
+      // Cleanup: unsubscribe Firestore listener on auth change
       return unsubscribePlan;
     });
 
-    // Unsubscribe auth listener when component unmounts
+    // Cleanup: unsubscribe auth listener on component unmount
     return () => unsubscribeAuth();
   }, []);
+
+  useEffect(() => {
+    if (mealPlan && typeof mealPlan === "string") {
+      const structured = parseMealPlan(mealPlan);
+      setParsedPlan(structured);
+    }
+  }, [mealPlan]);
 
   return (
     <div className="min-h-screen">
@@ -889,7 +724,7 @@ function Page() {
             <div className="mealWrapper">
               <div className="clear"></div>
               {/* {mealPlan} */}
-              {Array.isArray(parsedPlan) &&
+              {/* {Array.isArray(parsedPlan) &&
                 parsedPlan.map((section, index) => (
                   <React.Fragment key={index}>
                     <div className="meal-section">
@@ -902,31 +737,130 @@ function Page() {
                     </div>
                     <div className="clear"></div>
                   </React.Fragment>
-                ))}
-
-              {/* {Array.isArray(parsedPlan) &&
+                ))} */}
+              {Array.isArray(parsedPlan) &&
                 parsedPlan.map((section, index) => (
                   <React.Fragment key={index}>
-                    <div className="meal-section" >
-                      <h3 className="meal-title">
-                        {section.title.charAt(0).toUpperCase() +
-                          section.title.slice(1)}
-                      </h3>
-                      <ul className="meal-list">
-                        {section.items.map((item, i) => (
-                          <li className="mealLi" key={i}>
-                            {item}
-                          </li>
-                        ))}
-                      </ul>
+                    <div className="meal-section">
+                      <h3 className="meal-title">{section.title}</h3>
+
+                      {section.items && (
+                        <ul className="meal-list">
+                          {section.items.map((item, i) => (
+                            <li key={i}>{item}</li>
+                          ))}
+                        </ul>
+                      )}
+
+                      {section.macros && (
+                        <div className="meal-macros">
+                          <p>
+                            <strong>Calories:</strong> {section.macros.calories}{" "}
+                            | <strong>Protein:</strong> {section.macros.protein}{" "}
+                            | <strong>Carbs:</strong> {section.macros.carbs} |{" "}
+                            <strong>Fats:</strong> {section.macros.fats}
+                          </p>
+                        </div>
+                      )}
                     </div>
                     <div className="clear"></div>
                   </React.Fragment>
-                ))} */}
+                ))}
             </div>
           ) : (
-            <button onClick={generateAiMealPlan}>Generate Meal Plan</button>
+            <>
+              {showGenerateButton && (
+                <div className="generate-button-wrapper">
+                  <button
+                    onClick={generateAiMealPlan}
+                    disabled={loading}
+                    className="btn btn-primary"
+                  >
+                    Generate Today's Meal
+                    <GiMeal className="meal" />
+                  </button>
+                </div>
+              )}
+            </>
           )}
+          {loading && (
+            <div className="loading-message">
+              🍽️ Generating your meal plan, please wait...
+            </div>
+          )}
+
+          <footer className="footer">
+            <div className="container footer-grid">
+              <div className="footer-section">
+                <div className="footer-logo">TrainifAI</div>
+                <div className="footer-text">
+                  © 2025 TrainifAI. All rights reserved.
+                </div>
+              </div>
+
+              {/* <div className="footer-section">
+            <h4>Quick Links</h4>
+            <ul>
+              <li>
+                <a href="/workoutPlan">Workouts</a>
+              </li>
+              <li>
+                <a href="/mealPlan">Meal Plans</a>
+              </li>
+            </ul>
+          </div> */}
+
+              <div className="footer-section">
+                <h4>Support</h4>
+                <ul>
+                  <li>
+                    <a href="/FAQ">FAQ</a>
+                  </li>
+                  {/* <li>
+                <a href="/contact">Contact</a>
+              </li> */}
+                  <li>
+                    <a href="/TermsOfServices">Terms of Service</a>
+                  </li>
+                  <li>
+                    <a href="/PrivacyPolicy">Privacy Policy</a>
+                  </li>
+                </ul>
+              </div>
+
+              <PrivacyModal
+                isOpen={showPrivacy}
+                onClose={() => setShowPrivacy(false)}
+              />
+              <TermsModal
+                isOpen={showTerms}
+                onClose={() => setShowTerms(false)}
+              />
+
+              <div className="footer-section">
+                <h4>Stay Connected</h4>
+                <div className="social-icons">
+                  <a
+                    href="https://instagram.com/trainif.ai"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <Instagram />
+                  </a>
+                  <a
+                    href="https://tiktok.com/trainif.ai"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <FaTiktok className="tiktokLogo" />
+                  </a>
+                  <a href="mailto:trainifai@gmail.com.com">
+                    <Mail />
+                  </a>
+                </div>
+              </div>
+            </div>
+          </footer>
         </>
       )}
     </div>

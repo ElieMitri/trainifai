@@ -48,6 +48,7 @@ import logo from "../../enhanced-IMG_3755.jpeg.png";
 import Notification from "./components/Notification";
 import PrivacyModal from "./components/PrivacyModal";
 import TermsModal from "./components/TermsModal";
+import tiktok from "../../image.png";
 import { FaTiktok } from "react-icons/fa";
 
 function Modal({
@@ -294,6 +295,7 @@ function App() {
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const [addingWeight, setAddingWeight] = useState(false);
+  const [openCancelModal, setOpenCancelModal] = useState(false);
 
   const [notification, setNotification] = useState({
     visible: false,
@@ -707,6 +709,39 @@ function App() {
   //   sectionRef.current?.scrollIntoView({ behavior: 'smooth' });
   // };
 
+  function cancelMembership() {
+    if (!user) {
+      console.error("User is not logged in.");
+      return;
+    }
+
+    const userRef = doc(db, "users", user.uid);
+
+    updateDoc(userRef, {
+      paid: false,
+      paidLifetime: false,
+    })
+      .then(() => {
+        showNotification("Membership canceled successfully!", "success");
+        setSubscribed(false);
+        setTimeout(() => {
+          setOpenSettingsModal(false);
+        }, 2000); // 500ms delay (change this to your desired time)
+
+        setNotSubscribed(true);
+        setOpenCancelModal(false);
+        setUserData((prev) => ({ ...prev, paid: false }));
+        // console.log("Membership canceled successfully!");
+      })
+      .catch((error) => {
+        console.error("Error canceling membership:", error);
+        showNotification(
+          "Couldn't cancel membership. Please try again.",
+          "error"
+        );
+      });
+  }
+
   return (
     <div>
       <Notification
@@ -803,8 +838,40 @@ function App() {
                   <></>
                 )}
               </div>
+              {openCancelModal && (
+                <div className="modal-backdrop">
+                  <div className="modal">
+                    <h3>Are you sure you want to cancel your membership?</h3>
+                    <div className="modal-actions">
+                      <button
+                        // className="confirm-button"
+                        className="btn btn-primary"
+                        onClick={cancelMembership}
+                      >
+                        Yes
+                      </button>
+                      <button
+                        className="btn btn-primary white"
+                        onClick={() => setOpenCancelModal(false)}
+                      >
+                        No
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="settings-modal-footer">
+                {userData && userData.paid ? (
+                  <button
+                    onClick={() => setOpenCancelModal(true)}
+                    className="settings-action-button settings-logout-button"
+                  >
+                    Cancel Membership
+                  </button>
+                ) : (
+                  <></>
+                )}
                 <button
                   onClick={logout}
                   className="settings-action-button settings-logout-button"
@@ -1149,6 +1216,7 @@ function App() {
               <div className="price-tier">Yearly Premium Plan</div>
               <div className="price">
                 $199.99 <span>/year</span>
+                <p>Get up to 45% off monthly payments.</p>
               </div>
               <ul className="pricing-features">
                 <li className="included">Advanced meal plans</li>
@@ -1225,14 +1293,14 @@ function App() {
             <h4>Stay Connected</h4>
             <div className="social-icons">
               <a
-                href="https://www.instagram.com/trainif.ai"
+                href="https://instagram.com/trainif.ai"
                 target="_blank"
                 rel="noreferrer"
               >
                 <Instagram />
               </a>
               <a
-                href="https://www.tiktok.com/@trainif.ai"
+                href="https://tiktok.com/trainif.ai"
                 target="_blank"
                 rel="noreferrer"
               >

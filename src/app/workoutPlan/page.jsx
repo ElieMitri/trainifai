@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Activity,
   Dumbbell,
@@ -29,6 +29,8 @@ import Notification from "../components/Notification";
 import Button from "@mui/material/Button";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
+import Image from "next/image";
+import trainifai from "../../../public/trainifai.jpg";
 
 const muscleGroupsMap = {
   Push: ["chest", "shoulders", "arms"],
@@ -174,23 +176,28 @@ export default function WorkoutBot() {
   const [currentDay, setCurrentDay] = useState("");
   const [hasWorkouts, setHasWorkouts] = useState(false);
   const [doesntHaveWorkouts, setDoesntHaveWorkouts] = useState(false);
-  // const [open, setOpen] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [typing, setTyping] = useState(false);
+  const [showOptions, setShowOptions] = useState(false);
+  const [disableOptions, setDisableOptions] = useState(false);
+  const [options, setOptions] = useState([]);
+  const [step, setStep] = useState(0);
+  const [currentFlow, setCurrentFlow] = useState(null);
   const [notification, setNotification] = useState({
     visible: false,
     type: "info",
     message: "",
   });
   const [formData, setFormData] = useState({});
-
   const [gender, setGender] = useState(null);
   const [userTrainingDays, setUserTrainingDays] = useState(null);
-
   const [selectedExercises, setSelectedExercises] = useState({});
   const [workoutState, setWorkoutState] = useState(weeklyWorkout);
   const [selectedExercise, setSelectedExercise] = useState("");
   const [selectedExerciseFirebase, setSelectedExercisefirbase] = useState("");
   const [selectedDay, setSelectedDay] = useState("");
   const [anchorEl, setAnchorEl] = useState(null);
+  const [openAiModal, setOpenAiModal] = useState(false);
   const open = Boolean(anchorEl);
 
   // const handleClick = (event, workoutDay, exerciseName) => {
@@ -732,6 +739,320 @@ export default function WorkoutBot() {
     }
   };
 
+  // const options = [
+  //   "I'm not seeing results",
+  //   "I want something new",
+  //   "Too hard / too easy",
+  //   "Didn't like it",
+  //   "Other",
+  // ];
+
+  const conversationMap = {
+    "I'm not seeing results": [
+      "Got it! Let's look into how we can tweak your workout to be more effective.",
+      {
+        question: "How long have you been following your current routine?",
+        options: ["Less than a month", "1-3 months", "Over 3 months"],
+      },
+      {
+        question: "And how many times do you train each week?",
+        options: ["3 Days", "4 Days", "5 Days"],
+      },
+      "Thanks! Based on this, I’ll analyze intensity, frequency, and recovery to improve your progress.",
+    ],
+    "I want something new": [
+      "Nice! It's always great to switch things up, but changing your workout too often can slow progress.",
+      {
+        question:
+          "Are you looking for something more fun, more challenging, or totally different?",
+        options: ["More fun", "More challenging", "Totally different"],
+      },
+      {
+        question: "What kind of training interests you most?",
+        options: ["Strength", "Cardio", "HIIT", "Flexibility"],
+      },
+      "Awesome. I’ll build a fresh plan tailored to your new goals!",
+    ],
+    "Too hard / too easy": [
+      "Balance is key. Let's adjust the difficulty to suit your needs better.",
+      {
+        question: "Is your current routine too easy or too hard?",
+        options: ["Too easy", "Too hard"],
+      },
+      {
+        question: "What part feels off?",
+        options: ["Volume (sets/reps)", "Exercise selection", "Rest periods"],
+      },
+      "Thanks! I’ll fine-tune your plan to hit that sweet spot.",
+    ],
+    "Didn't like it": [
+      "No worries! Let’s figure out what would work better for you.",
+      {
+        question: "What didn’t you like about it?",
+        options: [
+          "Too repetitive",
+          "Too intense",
+          "Not enjoyable",
+          "Didn’t feel effective",
+        ],
+      },
+      {
+        question:
+          "Would you prefer something more structured or more flexible?",
+        options: ["Structured", "Flexible"],
+      },
+      "Cool — I’ll redesign it to match your preferences and keep it motivating.",
+    ],
+    Other: [
+      "Totally fair. Tell me more, and we’ll build a plan around it.",
+      {
+        question: "Would you prefer to write your own goal or pick one?",
+        options: ["Write my goal", "Pick one"],
+      },
+      {
+        question: "Now, do you have access to any equipment?",
+        options: ["Yes", "No", "Some basic stuff"],
+      },
+      "Perfect. That helps me shape the right plan around what you have!",
+    ],
+  };
+
+  // Helper to add messages
+  function addMessage(from, text) {
+    setMessages((prev) => [...prev, { from, text }]);
+  }
+
+  // ✅ Helper
+  function addMessage(from, text) {
+    setMessages((prev) => [...prev, { from, text }]);
+  }
+
+  function requestChange() {
+    setOpenAiModal(true);
+    setMessages([]);
+    setShowOptions(false);
+    setTyping(true);
+    setStep(0);
+    setCurrentFlow(null);
+
+    setTimeout(() => {
+      setTyping(false);
+      addMessage("bot", "Hello!");
+      setTyping(true);
+
+      setTimeout(() => {
+        setTyping(false);
+        addMessage(
+          "bot",
+          "I'm your workout assistant. Why are you considering changing your workout?"
+        );
+        setOptions(Object.keys(conversationMap)); // Initial options
+        setShowOptions(true);
+      }, 2000);
+    }, 2000);
+  }
+
+  function handleUserChoice(choice) {
+    console.log("User selected:", choice);
+
+    if (disableOptions) {
+      console.log("Options are currently disabled. Ignoring choice.");
+      return;
+    }
+
+    // ✅ Custom reply: "Less than a month"
+    if (choice === "Less than a month") {
+      setDisableOptions(true);
+      addMessage("user", choice);
+      setShowOptions(false);
+      setTyping(true);
+      console.log("User chose 'Less than a month' — sending custom response.");
+
+      setTimeout(() => {
+        setTyping(false);
+        addMessage(
+          "bot",
+          "You have to wait a bit more before expecting strong results."
+        );
+      }, 1000);
+
+      return; // ⛔ Stop the flow
+    }
+
+    // ✅ Standard user message handling
+    setDisableOptions(true);
+    addMessage("user", choice);
+    setShowOptions(false);
+
+    // ✅ Step 0 — starting a new flow
+    if (step === 0) {
+      const flow = conversationMap[choice];
+      console.log("Starting new flow:", flow);
+      setCurrentFlow(flow);
+      setStep(1);
+      handleBotStep(flow, 0); // Start from first bot message
+      return;
+    }
+
+    // 🔄 Custom Replies by Flow + Step
+
+    // "I want something new" — Step 2
+    if (currentFlow === conversationMap["I want something new"] && step === 2) {
+      let customReply = "";
+
+      if (choice === "More fun") {
+        customReply =
+          "Love that! Let’s make your workouts feel more like play and less like a chore.";
+      } else if (choice === "More challenging") {
+        customReply =
+          "Let’s crank things up! You’re ready for a new level of intensity. 🔥";
+      } else if (choice === "Totally different") {
+        customReply =
+          "Awesome — a fresh start can be super motivating. Let’s explore new formats.";
+      }
+
+      setTyping(true);
+      setTimeout(() => {
+        setTyping(false);
+        addMessage("bot", customReply);
+        const nextStep = step + 1;
+        setStep(nextStep);
+        handleBotStep(currentFlow, step); // pass current step
+      }, 1000);
+
+      return;
+    }
+
+    // "Too hard / too easy" — Step 2
+    if (currentFlow === conversationMap["Too hard / too easy"] && step === 2) {
+      let customReply = "";
+
+      if (choice === "Too easy") {
+        customReply =
+          "Got it — time to level things up so it feels more effective!";
+      } else if (choice === "Too hard") {
+        customReply =
+          "No problem — we’ll scale it back so it's more manageable.";
+      }
+
+      setTyping(true);
+      setTimeout(() => {
+        setTyping(false);
+        addMessage("bot", customReply);
+        const nextStep = step + 1;
+        setStep(nextStep);
+        handleBotStep(currentFlow, step);
+      }, 1000);
+
+      return;
+    }
+
+    // "Didn't like it" — Step 2
+    if (currentFlow === conversationMap["Didn't like it"] && step === 2) {
+      let customReply = "";
+
+      if (choice === "Too repetitive") {
+        customReply =
+          "Understood — we’ll add more variety to keep things fresh.";
+      } else if (choice === "Too intense") {
+        customReply =
+          "Alright — we’ll ease the intensity and find a better fit.";
+      } else if (choice === "Not enjoyable") {
+        customReply =
+          "Let’s inject more enjoyment into it. That’s key for consistency!";
+      } else if (choice === "Didn’t feel effective") {
+        customReply = "We’ll make sure your plan delivers noticeable results.";
+      }
+
+      setTyping(true);
+      setTimeout(() => {
+        setTyping(false);
+        addMessage("bot", customReply);
+        const nextStep = step + 1;
+        setStep(nextStep);
+        handleBotStep(currentFlow, step);
+      }, 1000);
+
+      return;
+    }
+
+    // "Other" — Step 2
+    if (currentFlow === conversationMap["Other"] && step === 2) {
+      let customReply = "";
+
+      if (choice === "Write my goal") {
+        customReply =
+          "Awesome — feel free to share your goal and I’ll shape a plan around it.";
+      } else if (choice === "Pick one") {
+        customReply =
+          "Great! I’ll help you explore some goal options that make sense.";
+      }
+
+      setTyping(true);
+      setTimeout(() => {
+        setTyping(false);
+        addMessage("bot", customReply);
+        const nextStep = step + 1;
+        setStep(nextStep);
+        handleBotStep(currentFlow, step);
+      }, 1000);
+
+      return;
+    }
+
+    // ✅ Default path — just move to the next step
+    const nextStep = step + 1;
+    setStep(nextStep);
+    handleBotStep(currentFlow, step);
+  }
+
+  function handleBotStep(flow, index) {
+    const nextStep = flow[index + 1]; // ✅ Keep this!
+
+    setTyping(true);
+    setTimeout(() => {
+      setTyping(false);
+
+      if (typeof nextStep === "string") {
+        addMessage("bot", nextStep);
+        setDisableOptions(false);
+      }
+
+      if (typeof nextStep === "object") {
+        addMessage("bot", nextStep.question);
+        setOptions(nextStep.options);
+        setShowOptions(true);
+        setDisableOptions(false);
+      }
+
+      if (!nextStep) {
+        addMessage(
+          "bot",
+          "That's all I need! I’ll start building your plan. 💪"
+        );
+      }
+    }, 1500);
+  }
+
+  const messagesEndRef = useRef(null);
+
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
+
+  function resetChat() {
+    setOpenAiModal(false);
+    setMessages([]);
+    setTyping(false);
+    setShowOptions(false);
+    setStep(0);
+    setCurrentFlow(null);
+    setDisableOptions(false);
+    setOptions([]); // optional, just to clear any buttons
+  }
+
   return (
     <div>
       <Notification
@@ -1130,7 +1451,146 @@ export default function WorkoutBot() {
               <></>
             )}
           </div>
+          {hasWorkouts ? (
+            <div className="requestWrapper">
+              <div>Wanna change your workout?</div>
+              <button
+                className="btn btn-primary cursor"
+                // onClick={() => setOpenAiModal(true)}
+                onClick={requestChange}
+              >
+                Request
+              </button>
+            </div>
+          ) : (
+            <></>
+          )}
         </div>
+
+        {/* {openAiModal ? (
+          <div className="nf_fixed_containerChat">
+            <div className="nf_cardChat">
+              <div className="nf_header">
+                <h3 className="nf_title">Chat</h3>
+                <h3 className="x" onClick={() => setOpenAiModal(false)}>
+                  X
+                </h3>
+              </div>
+              <div className="nf_content">
+                <div className="botText">
+                  <Image className="ailogo" alt="" src={trainifai} />
+                  <p>Hello!</p>
+                </div>
+                <div className="botText">
+                  <Image className="ailogo" alt="" src={trainifai} />
+                  <p>
+                    I'm your workout assistant. Why are you considering changing your workout?
+                  </p>
+                </div>
+                <div className="userText">
+                  <p>Hey!</p>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="0.75"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    // className="lucide lucide-user-icon lucide-user"
+                    className="ailogo"
+                  >
+                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <></>
+        )} */}
+
+        {openAiModal && (
+          <div className="nf_fixed_containerChat">
+            <div className="nf_cardChat">
+              {/* Header */}
+              <div className="nf_header">
+                <h3 className="nf_title">Chat</h3>
+                <h3 className="x" onClick={resetChat}>
+                  X
+                </h3>
+              </div>
+
+              {/* Scrollable Chat Content */}
+              <div className="nf_contentChat">
+                {messages.map((msg, index) => (
+                  <div
+                    key={index}
+                    className={msg.from === "bot" ? "botText" : "userText"}
+                  >
+                    {msg.from === "bot" ? (
+                      <>
+                        <Image
+                          src={trainifai}
+                          alt="AI logo"
+                          className="ailogo"
+                        />
+                        <p>{msg.text}</p>
+                      </>
+                    ) : (
+                      <>
+                        <p>{msg.text}</p>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="24"
+                          height="24"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="0.75"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="userLogo"
+                        >
+                          <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                          <circle cx="12" cy="7" r="4" />
+                        </svg>
+                      </>
+                    )}
+                  </div>
+                ))}
+
+                {typing && (
+                  <div className="botText">
+                    <Image src={trainifai} alt="AI logo" className="ailogo" />
+                    <p className="typing-dots">...</p>
+                  </div>
+                )}
+
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Options */}
+              {showOptions && (
+                <div className="options">
+                  {options.map((opt, i) => (
+                    <button
+                      key={i}
+                      className="optionBtn cursor"
+                      onClick={() => handleUserChoice(opt)}
+                      disabled={disableOptions}
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

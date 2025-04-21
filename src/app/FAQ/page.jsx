@@ -11,11 +11,16 @@ import {
   Instagram,
   Mail,
 } from "lucide-react";
+import { FaTiktok } from "react-icons/fa";
+import PrivacyModal from "../components/PrivacyModal";
+import TermsModal from "../components/TermsModal";
 // import "./faq.css";
 
-const Page = () => {
+const FAQPage = ({ user, userData, subscribed, notSubscribed }) => {
   const [activeModal, setActiveModal] = useState(null);
   const [activeQuestion, setActiveQuestion] = useState(null);
+  const [showPrivacy, setShowPrivacy] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
 
   const faqData = [
     {
@@ -54,14 +59,14 @@ const Page = () => {
       answer:
         "Yes! TrainifAI is designed for all fitness levels, from complete beginners to advanced athletes. Our AI tailors the difficulty and complexity of your plan to match your current fitness level and experience.",
     },
+    // {
+    //   id: 7,
+    //   question: "What equipment do I need?",
+    //   answer:
+    //     "That's entirely up to you! During setup, you can specify what equipment you have access to (home gym, full commercial gym, minimal equipment, etc.), and our AI will design a plan around those resources. We have effective options for all setups.",
+    // },
     {
       id: 7,
-      question: "What equipment do I need?",
-      answer:
-        "That's entirely up to you! During setup, you can specify what equipment you have access to (home gym, full commercial gym, minimal equipment, etc.), and our AI will design a plan around those resources. We have effective options for all setups.",
-    },
-    {
-      id: 8,
       question: "Can I cancel my subscription anytime?",
       answer:
         "Yes, you can cancel your premium subscription at any time through your account settings. Your premium features will remain active until the end of your current billing period.",
@@ -153,12 +158,81 @@ const Page = () => {
 
         {/* Footer could go here */}
       </div>
+      {/* <footer className="footer">
+        <div className="container footer-grid">
+          <div className="footer-section">
+            <div className="footer-text">
+              © 2025 TrainifAI. All rights reserved.
+            </div>
+          </div>
+        </div>
+      </footer> */}
+
       <footer className="footer">
         <div className="container footer-grid">
           <div className="footer-section">
-            {/* <div className="footer-logo">TrainifAI</div> */}
+            <div className="footer-logo">TrainifAI</div>
             <div className="footer-text">
               © 2025 TrainifAI. All rights reserved.
+            </div>
+          </div>
+
+          {/* <div className="footer-section">
+            <h4>Quick Links</h4>
+            <ul>
+              <li>
+                <a href="/workoutPlan">Workouts</a>
+              </li>
+              <li>
+                <a href="/mealPlan">Meal Plans</a>
+              </li>
+            </ul>
+          </div> */}
+
+          <div className="footer-section">
+            <h4>Support</h4>
+            <ul>
+              <li>
+                <a href="/FAQ">FAQ</a>
+              </li>
+              {/* <li>
+                <a href="/contact">Contact</a>
+              </li> */}
+              <li>
+                <a href="/TermsOfServices">Terms of Service</a>
+              </li>
+              <li>
+                <a href="/PrivacyPolicy">Privacy Policy</a>
+              </li>
+            </ul>
+          </div>
+
+          <PrivacyModal
+            isOpen={showPrivacy}
+            onClose={() => setShowPrivacy(false)}
+          />
+          <TermsModal isOpen={showTerms} onClose={() => setShowTerms(false)} />
+
+          <div className="footer-section">
+            <h4>Stay Connected</h4>
+            <div className="social-icons">
+              <a
+                href="https://instagram.com/trainif.ai"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <Instagram />
+              </a>
+              <a
+                href="https://tiktok.com/trainif.ai"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <FaTiktok className="tiktokLogo" />
+              </a>
+              <a href="mailto:trainifai@gmail.com.com">
+                <Mail />
+              </a>
             </div>
           </div>
         </div>
@@ -167,4 +241,4 @@ const Page = () => {
   );
 };
 
-export default Page;
+export default FAQPage;
