@@ -11,6 +11,8 @@ import {
   ArrowLeft,
   BadgePlus,
   Link,
+  Instagram,
+  Mail,
 } from "lucide-react";
 import { Notebook as Robot, Save, Trash2, Pencil } from "lucide-react";
 import {
@@ -26,11 +28,14 @@ import { db, auth } from "../../../firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import Notification from "../components/Notification";
 // import * as React from "react";
+// import PrivacyModal from "../components/PrivacyModal";
+// import TermsModal from "../components/TermsModal";
 import Button from "@mui/material/Button";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Image from "next/image";
 import trainifai from "../../../public/trainifai.jpg";
+import { FaTiktok } from "react-icons/fa";
 
 const muscleGroupsMap = {
   Push: ["chest", "shoulders", "arms"],
@@ -198,6 +203,8 @@ export default function WorkoutBot() {
   const [selectedDay, setSelectedDay] = useState("");
   const [anchorEl, setAnchorEl] = useState(null);
   const [openAiModal, setOpenAiModal] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
   const open = Boolean(anchorEl);
 
   // const handleClick = (event, workoutDay, exerciseName) => {
@@ -1467,52 +1474,6 @@ export default function WorkoutBot() {
           )}
         </div>
 
-        {/* {openAiModal ? (
-          <div className="nf_fixed_containerChat">
-            <div className="nf_cardChat">
-              <div className="nf_header">
-                <h3 className="nf_title">Chat</h3>
-                <h3 className="x" onClick={() => setOpenAiModal(false)}>
-                  X
-                </h3>
-              </div>
-              <div className="nf_content">
-                <div className="botText">
-                  <Image className="ailogo" alt="" src={trainifai} />
-                  <p>Hello!</p>
-                </div>
-                <div className="botText">
-                  <Image className="ailogo" alt="" src={trainifai} />
-                  <p>
-                    I'm your workout assistant. Why are you considering changing your workout?
-                  </p>
-                </div>
-                <div className="userText">
-                  <p>Hey!</p>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="0.75"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    // className="lucide lucide-user-icon lucide-user"
-                    className="ailogo"
-                  >
-                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                    <circle cx="12" cy="7" r="4" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <></>
-        )} */}
-
         {openAiModal && (
           <div className="nf_fixed_containerChat">
             <div className="nf_cardChat">
@@ -1591,6 +1552,78 @@ export default function WorkoutBot() {
             </div>
           </div>
         )}
+        <footer className="footer">
+          <div className="container footer-grid">
+            <div className="footer-section">
+              <div className="footer-logo">TrainifAI</div>
+              <div className="footer-text">
+                © {new Date().getFullYear()} TrainifAI. All rights reserved.
+              </div>
+            </div>
+
+            {/* <div className="footer-section">
+            <h4>Quick Links</h4>
+            <ul>
+              <li>
+                <a href="/workoutPlan">Workouts</a>
+              </li>
+              <li>
+                <a href="/mealPlan">Meal Plans</a>
+              </li>
+            </ul>
+          </div> */}
+
+            <div className="footer-section">
+              <h4>Support</h4>
+              <ul>
+                <li>
+                  <a href="/FAQ">FAQ</a>
+                </li>
+                {/* <li>
+                <a href="/contact">Contact</a>
+              </li> */}
+                <li>
+                  <a href="/TermsOfServices">Terms of Service</a>
+                </li>
+                <li>
+                  <a href="/PrivacyPolicy">Privacy Policy</a>
+                </li>
+              </ul>
+            </div>
+
+            {/* <PrivacyModal
+              isOpen={showPrivacy}
+              onClose={() => setShowPrivacy(false)}
+            />
+            <TermsModal
+              isOpen={showTerms}
+              onClose={() => setShowTerms(false)}
+            /> */}
+
+            <div className="footer-section">
+              <h4>Stay Connected</h4>
+              <div className="social-icons">
+                <a
+                  href="https://instagram.com/trainif.ai"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <Instagram />
+                </a>
+                <a
+                  href="https://tiktok.com/trainif.ai"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <FaTiktok className="tiktokLogo" />
+                </a>
+                <a href="mailto:trainifai@gmail.com.com">
+                  <Mail />
+                </a>
+              </div>
+            </div>
+          </div>
+        </footer>
       </div>
     </div>
   );

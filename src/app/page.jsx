@@ -46,8 +46,8 @@ import Image from "next/image";
 import logo from "../../enhanced-IMG_3755.jpeg.png";
 
 import Notification from "./components/Notification";
-import PrivacyModal from "./components/PrivacyModal";
-import TermsModal from "./components/TermsModal";
+// import PrivacyModal from "./components/PrivacyModal";
+// import TermsModal from "./components/TermsModal";
 import { FaTiktok } from "react-icons/fa";
 
 function Modal({
@@ -1248,7 +1248,7 @@ function App() {
           <div className="footer-section">
             <div className="footer-logo">TrainifAI</div>
             <div className="footer-text">
-              © 2025 TrainifAI. All rights reserved.
+              © {new Date().getFullYear()} TrainifAI. All rights reserved.
             </div>
           </div>
 
@@ -1282,11 +1282,11 @@ function App() {
             </ul>
           </div>
 
-          <PrivacyModal
+          {/* <PrivacyModal
             isOpen={showPrivacy}
             onClose={() => setShowPrivacy(false)}
           />
-          <TermsModal isOpen={showTerms} onClose={() => setShowTerms(false)} />
+          <TermsModal isOpen={showTerms} onClose={() => setShowTerms(false)} /> */}
 
           <div className="footer-section">
             <h4>Stay Connected</h4>

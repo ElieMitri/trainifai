@@ -12,8 +12,8 @@ import {
   Mail,
 } from "lucide-react";
 import { FaTiktok } from "react-icons/fa";
-import PrivacyModal from "../components/PrivacyModal";
-import TermsModal from "../components/TermsModal";
+// import PrivacyModal from "../components/PrivacyModal";
+// import TermsModal from "../components/TermsModal";
 // import "./faq.css";
 
 const FAQPage = () => {
@@ -158,22 +158,12 @@ const FAQPage = () => {
 
         {/* Footer could go here */}
       </div>
-      {/* <footer className="footer">
-        <div className="container footer-grid">
-          <div className="footer-section">
-            <div className="footer-text">
-              © 2025 TrainifAI. All rights reserved.
-            </div>
-          </div>
-        </div>
-      </footer> */}
-
       <footer className="footer">
         <div className="container footer-grid">
           <div className="footer-section">
             <div className="footer-logo">TrainifAI</div>
             <div className="footer-text">
-              © 2025 TrainifAI. All rights reserved.
+              © {new Date().getFullYear()} TrainifAI. All rights reserved.
             </div>
           </div>
 
@@ -207,11 +197,11 @@ const FAQPage = () => {
             </ul>
           </div>
 
-          <PrivacyModal
+          {/* <PrivacyModal
             isOpen={showPrivacy}
             onClose={() => setShowPrivacy(false)}
           />
-          <TermsModal isOpen={showTerms} onClose={() => setShowTerms(false)} />
+          <TermsModal isOpen={showTerms} onClose={() => setShowTerms(false)} /> */}
 
           <div className="footer-section">
             <h4>Stay Connected</h4>

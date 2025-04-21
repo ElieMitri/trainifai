@@ -3,6 +3,9 @@
 import React, { useState, useEffect } from "react";
 import { ArrowLeft, Dumbbell } from "lucide-react";
 import { Line } from "react-chartjs-2";
+import { FaTiktok } from "react-icons/fa";
+import { Instagram, Mail } from "lucide-react";
+
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -127,9 +130,71 @@ function Page() {
 
       {/* ✅ KEEPING ORIGINAL FOOTER */}
       <footer className="footer">
-        <div className="container">
-          <div className="footer-text">
-            © 2025 TrainifAI . All rights reserved.
+        <div className="container footer-grid">
+          <div className="footer-section">
+            <div className="footer-logo">TrainifAI</div>
+            <div className="footer-text">
+              © {new Date().getFullYear()} TrainifAI. All rights reserved.
+            </div>
+          </div>
+
+          {/* <div className="footer-section">
+            <h4>Quick Links</h4>
+            <ul>
+              <li>
+                <a href="/workoutPlan">Workouts</a>
+              </li>
+              <li>
+                <a href="/mealPlan">Meal Plans</a>
+              </li>
+            </ul>
+          </div> */}
+
+          <div className="footer-section">
+            <h4>Support</h4>
+            <ul>
+              <li>
+                <a href="/FAQ">FAQ</a>
+              </li>
+              {/* <li>
+                <a href="/contact">Contact</a>
+              </li> */}
+              <li>
+                <a href="/TermsOfServices">Terms of Service</a>
+              </li>
+              <li>
+                <a href="/PrivacyPolicy">Privacy Policy</a>
+              </li>
+            </ul>
+          </div>
+
+          {/* <PrivacyModal
+            isOpen={showPrivacy}
+            onClose={() => setShowPrivacy(false)}
+          />
+          <TermsModal isOpen={showTerms} onClose={() => setShowTerms(false)} /> */}
+
+          <div className="footer-section">
+            <h4>Stay Connected</h4>
+            <div className="social-icons">
+              <a
+                href="https://instagram.com/trainif.ai"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <Instagram />
+              </a>
+              <a
+                href="https://tiktok.com/trainif.ai"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <FaTiktok className="tiktokLogo" />
+              </a>
+              <a href="mailto:trainifai@gmail.com.com">
+                <Mail />
+              </a>
+            </div>
           </div>
         </div>
       </footer>
