@@ -48,7 +48,6 @@ import logo from "../../enhanced-IMG_3755.jpeg.png";
 import Notification from "./components/Notification";
 import PrivacyModal from "./components/PrivacyModal";
 import TermsModal from "./components/TermsModal";
-import tiktok from "../../image.png";
 import { FaTiktok } from "react-icons/fa";
 
 function Modal({
