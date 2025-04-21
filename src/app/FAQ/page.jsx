@@ -16,7 +16,7 @@ import PrivacyModal from "../components/PrivacyModal";
 import TermsModal from "../components/TermsModal";
 // import "./faq.css";
 
-const FAQPage = ({ user, userData, subscribed, notSubscribed }) => {
+const FAQPage = () => {
   const [activeModal, setActiveModal] = useState(null);
   const [activeQuestion, setActiveQuestion] = useState(null);
   const [showPrivacy, setShowPrivacy] = useState(false);
