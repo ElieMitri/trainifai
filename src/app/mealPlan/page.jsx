@@ -16,8 +16,6 @@ import {
 } from "lucide-react";
 import { GiMeal } from "react-icons/gi";
 import { FaTiktok } from "react-icons/fa";
-import PrivacyModal from "../components/PrivacyModal";
-import TermsModal from "../components/TermsModal";
 // import {
 //   Activity,
 //   Dumbbell,
@@ -828,14 +826,14 @@ function Page() {
                 </ul>
               </div>
 
-              <PrivacyModal
+              {/* <PrivacyModal
                 isOpen={showPrivacy}
                 onClose={() => setShowPrivacy(false)}
               />
               <TermsModal
                 isOpen={showTerms}
                 onClose={() => setShowTerms(false)}
-              />
+              /> */}
 
               <div className="footer-section">
                 <h4>Stay Connected</h4>
