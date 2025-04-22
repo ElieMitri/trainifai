@@ -15,6 +15,8 @@ import {
   Mail,
 } from "lucide-react";
 import { Notebook as Robot, Save, Trash2, Pencil } from "lucide-react";
+import { FaXTwitter } from "react-icons/fa6";
+import { FaRedditAlien } from "react-icons/fa";
 import {
   collection,
   addDoc,
@@ -51,124 +53,124 @@ const muscleGroupsMap = {
 
 const exerciseDatabase = {
   chest: [
-    "Bench Press",
-    "Incline Dumbbell Press",
-    "Push-Ups",
-    "Chest Flyes",
-    "Decline Press",
-    "Dumbbell Chest Press",
-    "Cable Chest Flyes",
-    "Chest Dips",
-    "Machine Chest Press",
-    "Pec Deck Machine",
-    "Close-Grip Bench Press",
-    "Landmine Chest Press",
+    { name: "Bench Press", importance: 10 },
+    { name: "Incline Dumbbell Press", importance: 9 },
+    { name: "Push-Ups", importance: 8 },
+    { name: "Chest Flyes", importance: 7 },
+    { name: "Decline Press", importance: 7 },
+    { name: "Dumbbell Chest Press", importance: 8 },
+    { name: "Cable Chest Flyes", importance: 6 },
+    { name: "Chest Dips", importance: 9 },
+    { name: "Machine Chest Press", importance: 6 },
+    { name: "Pec Deck Machine", importance: 6 },
+    { name: "Close-Grip Bench Press", importance: 7 },
+    { name: "Landmine Chest Press", importance: 6 },
   ],
   back: [
-    "Pull-Ups",
-    "Bent Over Rows",
-    "Lat Pulldowns",
-    "Face Pulls",
-    "Seated Cable Rows",
-    "T-Bar Rows",
-    "Barbell Rows",
-    "Dumbbell Rows",
-    "Single-Arm Dumbbell Row",
-    "Inverted Rows",
-    "Deadlifts",
-    "Hyperextensions",
-    "Shrugs",
-    "Renegade Rows",
-    "Kettlebell Swings",
+    { name: "Pull-Ups", importance: 10 },
+    { name: "Bent Over Rows", importance: 9 },
+    { name: "Lat Pulldowns", importance: 8 },
+    { name: "Face Pulls", importance: 7 },
+    { name: "Seated Cable Rows", importance: 8 },
+    { name: "T-Bar Rows", importance: 8 },
+    { name: "Barbell Rows", importance: 9 },
+    { name: "Dumbbell Rows", importance: 8 },
+    { name: "Single-Arm Dumbbell Row", importance: 8 },
+    { name: "Inverted Rows", importance: 7 },
+    { name: "Deadlifts", importance: 10 },
+    { name: "Hyperextensions", importance: 6 },
+    { name: "Shrugs", importance: 5 },
+    { name: "Renegade Rows", importance: 6 },
+    { name: "Kettlebell Swings", importance: 6 },
   ],
   legs: [
-    "Squats",
-    "Deadlifts",
-    "Lunges",
-    "Leg Press",
-    "Leg Extensions",
-    "Leg Curls",
-    "Bulgarian Split Squats",
-    "Step-Ups",
-    "Hip Thrusts",
-    "Glute Bridges",
-    "Calf Raises",
-    "Romanian Deadlifts",
-    "Walking Lunges",
-    "Sumo Squats",
-    "Box Jumps",
-    "Kettlebell Swings",
-    "Smith Machine Squats",
+    { name: "Squats", importance: 10 },
+    { name: "Deadlifts", importance: 10 },
+    { name: "Lunges", importance: 8 },
+    { name: "Leg Press", importance: 9 },
+    { name: "Leg Extensions", importance: 7 },
+    { name: "Leg Curls", importance: 7 },
+    { name: "Bulgarian Split Squats", importance: 9 },
+    { name: "Step-Ups", importance: 8 },
+    { name: "Hip Thrusts", importance: 9 },
+    { name: "Glute Bridges", importance: 8 },
+    { name: "Calf Raises", importance: 6 },
+    { name: "Romanian Deadlifts", importance: 9 },
+    { name: "Walking Lunges", importance: 8 },
+    { name: "Sumo Squats", importance: 8 },
+    { name: "Box Jumps", importance: 6 },
+    { name: "Kettlebell Swings", importance: 6 },
+    { name: "Smith Machine Squats", importance: 7 },
   ],
   shoulders: [
-    "Military Press",
-    "Lateral Raises",
-    "Front Raises",
-    "Shrugs",
-    "Arnold Press",
-    "Upright Rows",
-    "Reverse Pec Deck",
-    "Face Pulls",
-    "Dumbbell Shoulder Press",
-    "Cable Lateral Raises",
-    "Barbell Shoulder Press",
-    "Dumbbell Front Raise",
-    "Cable Front Raise",
-    "Overhead Dumbbell Triceps Extension",
+    { name: "Military Press", importance: 9 },
+    { name: "Lateral Raises", importance: 8 },
+    { name: "Front Raises", importance: 7 },
+    { name: "Shrugs", importance: 6 },
+    { name: "Arnold Press", importance: 9 },
+    { name: "Upright Rows", importance: 7 },
+    { name: "Reverse Pec Deck", importance: 7 },
+    { name: "Face Pulls", importance: 8 },
+    { name: "Dumbbell Shoulder Press", importance: 8 },
+    { name: "Cable Lateral Raises", importance: 6 },
+    { name: "Barbell Shoulder Press", importance: 9 },
+    { name: "Dumbbell Front Raise", importance: 6 },
+    { name: "Cable Front Raise", importance: 6 },
+    { name: "Overhead Dumbbell Triceps Extension", importance: 5 },
   ],
   arms: [
-    "Bicep Curls",
-    "Tricep Extensions",
-    "Hammer Curls",
-    "Diamond Push-Ups",
-    "Concentration Curls",
-    "Preacher Curls",
-    "EZ Bar Curls",
-    "Cable Tricep Pushdowns",
-    "Overhead Tricep Extensions",
-    "Close-Grip Bench Press",
-    "Barbell Curls",
-    "Tricep Dips",
-    "Cable Bicep Curls",
-    "Chin-Ups",
-    "Zottman Curls",
-    "Tricep Kickbacks",
+    { name: "Bicep Curls", importance: 7 },
+    { name: "Tricep Extensions", importance: 7 },
+    { name: "Hammer Curls", importance: 8 },
+    { name: "Diamond Push-Ups", importance: 7 },
+    { name: "Concentration Curls", importance: 7 },
+    { name: "Preacher Curls", importance: 7 },
+    { name: "EZ Bar Curls", importance: 8 },
+    { name: "Cable Tricep Pushdowns", importance: 8 },
+    { name: "Overhead Tricep Extensions", importance: 7 },
+    { name: "Close-Grip Bench Press", importance: 8 },
+    { name: "Barbell Curls", importance: 8 },
+    { name: "Tricep Dips", importance: 8 },
+    { name: "Cable Bicep Curls", importance: 7 },
+    { name: "Chin-Ups", importance: 9 },
+    { name: "Zottman Curls", importance: 6 },
+    { name: "Tricep Kickbacks", importance: 6 },
   ],
   core: [
-    "Planks",
-    "Crunches",
-    "Russian Twists",
-    "Leg Raises",
-    "Mountain Climbers",
-    "Ab Wheel Rollouts",
-    "Bicycle Crunches",
-    "V-Ups",
-    "Flutter Kicks",
-    "Side Planks",
-    "Hanging Leg Raises",
-    "Cable Woodchoppers",
-    "Lying Leg Raises",
-    "Toe Touches",
-    "Reverse Crunches",
-    "Plank with Leg Lift",
+    { name: "Planks", importance: 9 },
+    { name: "Crunches", importance: 7 },
+    { name: "Russian Twists", importance: 7 },
+    { name: "Leg Raises", importance: 8 },
+    { name: "Mountain Climbers", importance: 6 },
+    { name: "Ab Wheel Rollouts", importance: 9 },
+    { name: "Bicycle Crunches", importance: 7 },
+    { name: "V-Ups", importance: 8 },
+    { name: "Flutter Kicks", importance: 6 },
+    { name: "Side Planks", importance: 8 },
+    { name: "Hanging Leg Raises", importance: 9 },
+    { name: "Cable Woodchoppers", importance: 8 },
+    { name: "Lying Leg Raises", importance: 7 },
+    { name: "Toe Touches", importance: 6 },
+    { name: "Reverse Crunches", importance: 7 },
+    { name: "Plank with Leg Lift", importance: 7 },
   ],
   glutes: [
-    "Hip Thrusts",
-    "Glute Bridges",
-    "Cable Kickbacks",
-    "Bulgarian Split Squats",
-    "Sumo Deadlifts",
-    "Frog Pumps",
-    "Step-Ups",
-    "Glute Kickbacks",
-    "Cable Glute Bridges",
-    "Single-Leg Hip Thrusts",
-    "Hip Abductions",
-    "Walking Lunges",
-    "Kettlebell Swings",
-    "Glute Ham Raises",
-    "Barbell Hip Thrusts",
-    "Squats",
+    { name: "Hip Thrusts", importance: 10 },
+    { name: "Glute Bridges", importance: 9 },
+    { name: "Cable Kickbacks", importance: 8 },
+    { name: "Bulgarian Split Squats", importance: 9 },
+    { name: "Sumo Deadlifts", importance: 9 },
+    { name: "Frog Pumps", importance: 6 },
+    { name: "Step-Ups", importance: 8 },
+    { name: "Glute Kickbacks", importance: 7 },
+    { name: "Cable Glute Bridges", importance: 8 },
+    { name: "Single-Leg Hip Thrusts", importance: 9 },
+    { name: "Hip Abductions", importance: 7 },
+    { name: "Walking Lunges", importance: 8 },
+    { name: "Kettlebell Swings", importance: 7 },
+    { name: "Glute Ham Raises", importance: 8 },
+    { name: "Barbell Hip Thrusts", importance: 10 },
+    { name: "Squats", importance: 10 },
   ],
 };
 
@@ -281,7 +283,7 @@ export default function WorkoutBot() {
       },
     };
 
-    const selectedSplit = allSplits[userGender][workoutDays];
+    const selectedSplit = [...allSplits[userGender][workoutDays]]; // Use a copy to avoid modifying original
 
     const weekDays = [
       "Monday",
@@ -293,7 +295,6 @@ export default function WorkoutBot() {
       "Sunday",
     ];
 
-    // Define rest day indexes based on training days
     const restDayIndexes = {
       3: [1, 3, 5, 6], // Tue, Thu, Sat, Sun
       4: [2, 5, 6], // Wed, Sat, Sun
@@ -310,7 +311,7 @@ export default function WorkoutBot() {
           exercises: [],
         };
       } else {
-        const split = selectedSplit.shift(); // Get next split in order
+        const split = selectedSplit.shift();
         return {
           day: dayName,
           split: split,
@@ -326,16 +327,25 @@ export default function WorkoutBot() {
 
       muscleGroups.forEach((group) => {
         const exercises = exerciseDatabase[group];
-        const selectedExercises = exercises
+
+        // Get top 5 important exercises
+        const topExercises = exercises
+          .sort((a, b) => b.importance - a.importance)
+          .slice(0, 5);
+
+        // Randomly pick 2 from the top 5, then sort them again by importance
+        const selectedExercises = topExercises
           .sort(() => Math.random() - 0.5)
-          .slice(0, 2);
+          .slice(0, 2)
+          .sort((a, b) => b.importance - a.importance);
 
         selectedExercises.forEach((exercise) => {
           day.exercises.push({
-            name: exercise,
-            sets: Math.floor(Math.random() * 2) + 3, // 3–4 sets
+            name: exercise.name,
+            sets: Math.floor(Math.random() * 2) + 3, // 3-4 sets
             reps: [8, 10, 12][Math.floor(Math.random() * 3)],
             weight: 0,
+            importance: exercise.importance,
           });
         });
       });
@@ -426,7 +436,6 @@ export default function WorkoutBot() {
       if (user) {
         setLoading(true); // Start loading state
 
-        // Set up a real-time listener using onSnapshot
         const workoutsRef = collection(
           db,
           "workouts",
@@ -441,11 +450,9 @@ export default function WorkoutBot() {
           }));
 
           if (fetchedWorkouts.length === 0) {
-            // No workouts found, handle accordingly
             setDoesntHaveWorkouts(true);
-            setWorkouts([]); // Reset workouts to empty in case no workouts exist
+            setWorkouts([]);
           } else {
-            // Found workouts, update state
             setWorkouts(fetchedWorkouts[0].workouts);
             console.log(fetchedWorkouts[0].workouts);
           }
@@ -453,32 +460,34 @@ export default function WorkoutBot() {
           const day = new Date().toLocaleDateString("en-US", {
             weekday: "long",
           });
-          setCurrentDay(day); // Set the current day for comparison
+          setCurrentDay(day);
 
-          // Find today's workout from the fetched workouts
           const todayWorkout = fetchedWorkouts
             .map((workout) => workout.workouts)
             .flat()
             .find((workout) => workout.day === day);
 
           if (todayWorkout) {
-            setTodaysExercises(todayWorkout.exercises);
-            console.log("Today's exercises:", todayWorkout.exercises);
-            console.log(day);
+            // Sort by importance (fallback to 0 if missing)
+            const sortedExercises = [...todayWorkout.exercises].sort(
+              (a, b) => (b.importance || 0) - (a.importance || 0)
+            );
+
+            setTodaysExercises(sortedExercises);
+            console.log("Today's exercises:", sortedExercises);
             setHasWorkouts(true);
           } else {
             setDoesntHaveWorkouts(true);
           }
 
-          setLoading(false); // Stop loading once data is fetched
+          setLoading(false);
         });
 
-        // Cleanup on component unmount
         return () => unsubscribeSnapshot();
       }
     });
 
-    return () => unsubscribe(); // Clean up onAuthStateChanged listener
+    return () => unsubscribe();
   }, []);
 
   // const handleInputChange = (e) => {
@@ -1179,6 +1188,21 @@ export default function WorkoutBot() {
                             </option>
                           </optgroup>
 
+                          <optgroup label="Shoulders">
+                            <option value="Overhead Press">
+                              Overhead Press
+                            </option>
+                            <option value="Lateral Raises">
+                              Lateral Raises
+                            </option>
+                            <option value="Front Raises">Front Raises</option>
+                            <option value="Rear Delt Flyes">
+                              Rear Delt Flyes
+                            </option>
+                            <option value="Arnold Press">Arnold Press</option>
+                            <option value="Shrugs">Shrugs</option>
+                          </optgroup>
+
                           <optgroup label="Legs">
                             <option value="Squats">Squat</option>
                             <option value="Leg Press">Leg Press</option>
@@ -1557,7 +1581,7 @@ export default function WorkoutBot() {
             <div className="footer-section">
               <div className="footer-logo">TrainifAI</div>
               <div className="footer-text">
-                © {new Date().getFullYear()} TrainifAI. All rights reserved.
+                ©️ {new Date().getFullYear()} TrainifAI. All rights reserved.
               </div>
             </div>
 
@@ -1608,7 +1632,7 @@ export default function WorkoutBot() {
                   target="_blank"
                   rel="noreferrer"
                 >
-                  <Instagram />
+                  <Instagram className="tiktokLogo" />
                 </a>
                 <a
                   href="https://tiktok.com/trainif.ai"
@@ -1617,8 +1641,22 @@ export default function WorkoutBot() {
                 >
                   <FaTiktok className="tiktokLogo" />
                 </a>
+                <a
+                  href="https://instagram.com/trainif.ai"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <FaXTwitter className="tiktokLogo" />
+                </a>
+                <a
+                  href="https://www.reddit.com/user/TrainifAI/"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <FaRedditAlien className="tiktokLogo" />
+                </a>
                 <a href="mailto:trainifai@gmail.com.com">
-                  <Mail />
+                  <Mail className="mail tiktokLogo" />
                 </a>
               </div>
             </div>

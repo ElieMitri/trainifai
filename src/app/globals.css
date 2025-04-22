@@ -4811,3 +4811,182 @@ a[href^="mailto:"]:hover {
   margin: 1rem 0;
   color: #00ffc8;
 }
+
+.mail {
+  color: #c8c8c8;
+  /* font-size: 1.1rem; */
+  /* margin: 1rem 0; */
+}
+
+.paymo_overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.paymo_container {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  width: 90%;
+  max-width: 420px;
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  animation: fadeIn 0.3s ease;
+  outline: none;
+  border: none;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.paymo_header {
+  color: white;
+  padding: 20px;
+  background-color: rgb(27, 21, 61);
+  outline: none;
+  border: none;
+}
+
+.paymo_body {
+  background-color: rgb(27, 21, 61);
+}
+
+.paymo_header_title {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.paymo_header_subtitle {
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.paymo_body {
+  padding: 20px;
+}
+
+.paymo_payment_options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.paymo_payment_option {
+  display: flex;
+  align-items: center;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: rgb(194, 194, 194);
+}
+
+.paymo_payment_option:hover {
+  background-color: #f8f9fa;
+}
+
+.paymo_payment_option.paymo_selected {
+  border-color: #3a86ff;
+  background-color: white;
+}
+
+.paymo_icon {
+  font-size: 24px;
+  margin-right: 15px;
+  width: 30px;
+  text-align: center;
+}
+
+.paymo_payment_details {
+  flex-grow: 1;
+}
+
+.paymo_payment_name {
+  font-weight: 600;
+  margin-bottom: 2px;
+  color: black;
+}
+
+.paymo_payment_description {
+  font-size: 12px;
+  color: #666;
+}
+
+.paymo_radio {
+  height: 18px;
+  width: 18px;
+  accent-color: rgb(27, 21, 61);
+}
+
+.paymo_button {
+  background-color: #3a86ff;
+  color: white;
+  border: none;
+  padding: 12px;
+  width: 100%;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.paymo_button:hover {
+  background-color: #2d75e0;
+}
+
+.paymo_button:disabled {
+  background-color: #b3c7e6;
+  cursor: not-allowed;
+}
+
+.paymo_success {
+  text-align: center;
+  padding: 30px 20px;
+}
+
+.paymo_success_icon {
+  font-size: 50px;
+  margin-bottom: 15px;
+}
+
+.paymo_success_title {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.paymo_success_message {
+  color: #666;
+  margin-bottom: 20px;
+}
+
+.paymoBtn {
+  width: 100%;
+  padding: 15px 0;
+}
+
+
+.white {
+  background-color: white;
+  color: #1b153d;
+  border: none;
+}

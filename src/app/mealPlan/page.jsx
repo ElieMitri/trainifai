@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import { GiMeal } from "react-icons/gi";
 import { FaTiktok } from "react-icons/fa";
+import { FaXTwitter } from "react-icons/fa6";
+import { FaRedditAlien } from "react-icons/fa";
 // import {
 //   Activity,
 //   Dumbbell,
@@ -432,22 +434,22 @@ function Page() {
   //     setLoading(false);
   //   }
   // };
-
   const generateAiMealPlan = async () => {
     try {
       setLoading(true);
+      setShowGenerateButton(false); // Hide button while generating
       setError("");
 
       const currentUser = auth.currentUser;
       if (!currentUser || !currentUser.uid) {
         setError("You must be logged in to generate and save a meal plan.");
         setLoading(false);
+        setShowGenerateButton(true); // Show button again on failure
         return;
       }
 
       const today = new Date().toDateString();
 
-      // ✅ FIXED: Use 'today' as document ID inside 'allMeals' subcollection
       const mealPlanRef = doc(
         db,
         "mealPlans",
@@ -462,18 +464,13 @@ function Page() {
         const savedDay = data.createdDay;
 
         if (savedDay !== today) {
-          // It's a new day — reset the saved plan
           await setDoc(mealPlanRef, {}, { merge: true }); // clear contents
           setMealPlan(""); // clear UI state
-        } else {
-          // Already has a plan for today — return early or allow regeneration
-          // return; // Optional: uncomment if you want to block regeneration
         }
       }
 
       setMealPlan(""); // Clear existing plan in UI state
 
-      // Validate user input
       const isValid =
         userData &&
         typeof userData.calories === "number" &&
@@ -484,6 +481,7 @@ function Page() {
       if (!isValid) {
         setError("Invalid user data. Please check your input values.");
         setLoading(false);
+        setShowGenerateButton(true); // Show button again on failure
         return;
       }
 
@@ -518,13 +516,14 @@ function Page() {
             ...relevantData,
             mealPlan: generatedPlan,
             createdAt: new Date(),
-            createdDay: today, // 👈 Save date string
+            createdDay: today,
           });
 
           console.log("✅ Meal plan saved to Firebase");
         } catch (firebaseError) {
           console.error("🔥 Firebase save error:", firebaseError);
           setError("Meal plan generated, but failed to save it.");
+          setShowGenerateButton(true); // Show button again on save failure
         }
       } else {
         const fallbackMessage =
@@ -532,6 +531,7 @@ function Page() {
         console.error("❌ Unexpected response:", response?.data ?? "No data");
         setMealPlan("");
         setError(fallbackMessage);
+        setShowGenerateButton(true); // Show button again on bad format
       }
     } catch (err) {
       console.log("🔥 Full error object:", err);
@@ -561,8 +561,9 @@ function Page() {
       console.error("❌ Error generating meal plan:", safeMessage);
       setError(safeMessage);
       setMealPlan("");
+      setShowGenerateButton(true); // Show button again on general failure
     } finally {
-      setLoading(false);
+      setLoading(false); // Don't touch button visibility here
     }
   };
 
@@ -781,22 +782,23 @@ function Page() {
               )}
             </>
           )}
-          {loading && (
-            <div className="loading-message">
-              🍽️ Generating your meal plan, please wait...
+        </>
+      )}
+      {loading ? (
+        <div className="loading-message">
+          🍽️ Generating your meal plan, please wait...
+        </div>
+      ) : null}
+      <footer className="footer">
+        <div className="container footer-grid">
+          <div className="footer-section">
+            <div className="footer-logo">TrainifAI</div>
+            <div className="footer-text">
+              ©️ 2025 TrainifAI. All rights reserved.
             </div>
-          )}
+          </div>
 
-          <footer className="footer">
-            <div className="container footer-grid">
-              <div className="footer-section">
-                <div className="footer-logo">TrainifAI</div>
-                <div className="footer-text">
-                  © 2025 TrainifAI. All rights reserved.
-                </div>
-              </div>
-
-              {/* <div className="footer-section">
+          {/* <div className="footer-section">
             <h4>Quick Links</h4>
             <ul>
               <li>
@@ -808,59 +810,62 @@ function Page() {
             </ul>
           </div> */}
 
-              <div className="footer-section">
-                <h4>Support</h4>
-                <ul>
-                  <li>
-                    <a href="/FAQ">FAQ</a>
-                  </li>
-                  {/* <li>
+          <div className="footer-section">
+            <h4>Support</h4>
+            <ul>
+              <li>
+                <a href="/FAQ">FAQ</a>
+              </li>
+              {/* <li>
                 <a href="/contact">Contact</a>
               </li> */}
-                  <li>
-                    <a href="/TermsOfServices">Terms of Service</a>
-                  </li>
-                  <li>
-                    <a href="/PrivacyPolicy">Privacy Policy</a>
-                  </li>
-                </ul>
-              </div>
+              <li>
+                <a href="/TermsOfServices">Terms of Service</a>
+              </li>
+              <li>
+                <a href="/PrivacyPolicy">Privacy Policy</a>
+              </li>
+            </ul>
+          </div>
 
-              {/* <PrivacyModal
-                isOpen={showPrivacy}
-                onClose={() => setShowPrivacy(false)}
-              />
-              <TermsModal
-                isOpen={showTerms}
-                onClose={() => setShowTerms(false)}
-              /> */}
-
-              <div className="footer-section">
-                <h4>Stay Connected</h4>
-                <div className="social-icons">
-                  <a
-                    href="https://instagram.com/trainif.ai"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <Instagram />
-                  </a>
-                  <a
-                    href="https://tiktok.com/trainif.ai"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <FaTiktok className="tiktokLogo" />
-                  </a>
-                  <a href="mailto:trainifai@gmail.com.com">
-                    <Mail />
-                  </a>
-                </div>
-              </div>
+          <div className="footer-section">
+            <h4>Stay Connected</h4>
+            <div className="social-icons">
+              <a
+                href="https://instagram.com/trainif.ai"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <Instagram className="tiktokLogo" />
+              </a>
+              <a
+                href="https://tiktok.com/trainif.ai"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <FaTiktok className="tiktokLogo" />
+              </a>
+              <a
+                href="https://instagram.com/trainif.ai"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <FaXTwitter className="tiktokLogo" />
+              </a>
+              <a
+                href="https://www.reddit.com/user/TrainifAI/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <FaRedditAlien className="tiktokLogo" />
+              </a>
+              <a href="mailto:trainifai@gmail.com.com">
+                <Mail className="mail tiktokLogo" />
+              </a>
             </div>
-          </footer>
-        </>
-      )}
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

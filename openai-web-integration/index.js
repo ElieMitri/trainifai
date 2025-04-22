@@ -25,7 +25,6 @@ app.post("/generate", async (req, res) => {
       .json({ error: "Invalid or missing macronutrient values." });
   }
 
- 
   const prompt = `
 Create a meal plan for one day that EXACTLY matches the following nutritional goals:
 - Calories: ${calories} kcal

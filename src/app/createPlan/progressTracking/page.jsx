@@ -5,6 +5,8 @@ import { ArrowLeft, Dumbbell } from "lucide-react";
 import { Line } from "react-chartjs-2";
 import { FaTiktok } from "react-icons/fa";
 import { Instagram, Mail } from "lucide-react";
+import { FaXTwitter } from "react-icons/fa6";
+import { FaRedditAlien } from "react-icons/fa";
 
 import {
   Chart as ChartJS,
@@ -134,7 +136,7 @@ function Page() {
           <div className="footer-section">
             <div className="footer-logo">TrainifAI</div>
             <div className="footer-text">
-              © {new Date().getFullYear()} TrainifAI. All rights reserved.
+              ©️ {new Date().getFullYear()} TrainifAI. All rights reserved.
             </div>
           </div>
 
@@ -182,7 +184,7 @@ function Page() {
                 target="_blank"
                 rel="noreferrer"
               >
-                <Instagram />
+                <Instagram className="tiktokLogo" />
               </a>
               <a
                 href="https://tiktok.com/trainif.ai"
@@ -191,8 +193,22 @@ function Page() {
               >
                 <FaTiktok className="tiktokLogo" />
               </a>
+              <a
+                href="https://instagram.com/trainif.ai"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <FaXTwitter className="tiktokLogo" />
+              </a>
+              <a
+                href="https://www.reddit.com/user/TrainifAI/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <FaRedditAlien className="tiktokLogo" />
+              </a>
               <a href="mailto:trainifai@gmail.com.com">
-                <Mail />
+                <Mail className="mail tiktokLogo" />
               </a>
             </div>
           </div>

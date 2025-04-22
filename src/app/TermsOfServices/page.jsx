@@ -6,6 +6,8 @@ import { ArrowLeft, Dumbbell, Instagram, Mail } from "lucide-react";
 import { FaTiktok } from "react-icons/fa";
 // import PrivacyModal from "../components/PrivacyModal";
 // import TermsModal from "../components/TermsModal";
+import { FaXTwitter } from "react-icons/fa6";
+import { FaRedditAlien } from "react-icons/fa";
 
 const PrivacyPage = () => {
   const [showPrivacy, setShowPrivacy] = useState(false);
@@ -128,7 +130,7 @@ const PrivacyPage = () => {
           <div className="footer-section">
             <div className="footer-logo">TrainifAI</div>
             <div className="footer-text">
-              © {new Date().getFullYear()} TrainifAI. All rights reserved.
+              ©️ {new Date().getFullYear()} TrainifAI. All rights reserved.
             </div>
           </div>
 
@@ -176,7 +178,7 @@ const PrivacyPage = () => {
                 target="_blank"
                 rel="noreferrer"
               >
-                <Instagram />
+                <Instagram className="tiktokLogo" />
               </a>
               <a
                 href="https://tiktok.com/trainif.ai"
@@ -185,8 +187,22 @@ const PrivacyPage = () => {
               >
                 <FaTiktok className="tiktokLogo" />
               </a>
+              <a
+                href="https://instagram.com/trainif.ai"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <FaXTwitter className="tiktokLogo" />
+              </a>
+              <a
+                href="https://www.reddit.com/user/TrainifAI/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <FaRedditAlien className="tiktokLogo" />
+              </a>
               <a href="mailto:trainifai@gmail.com.com">
-                <Mail />
+                <Mail className="mail tiktokLogo" />
               </a>
             </div>
           </div>
