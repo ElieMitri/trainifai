@@ -51,65 +51,76 @@ import Notification from "../components/Notification";
 import axios from "axios";
 
 const parseMealPlan = (rawText) => {
-  const sections = rawText
-    .split(
-      /(?=Breakfast:|Snack:|Lunch:|Dinner:|Total Macronutrient breakdown for the day:)/g
-    )
-    .map((s) => s.trim());
+  const lines = rawText
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+  const meals = [];
+  let currentMeal = null;
 
-  const result = [];
+  for (let rawLine of lines) {
+    const line = rawLine.replace(/^- /, "").trim();
 
-  sections.forEach((section) => {
-    const titleMatch = section.match(/^(Breakfast|Snack|Lunch|Dinner)/i);
-    const isTotal = section.startsWith("Total Macronutrient");
-
-    if (titleMatch) {
-      const title = titleMatch[0];
-
-      const items = section
-        .split("Estimated Macronutrient breakdown:")[0]
-        .replace(`${title}:`, "")
-        .trim()
-        .split("-")
-        .map((i) => i.trim())
-        .filter(Boolean);
-
-      const macrosMatch = section.match(
-        /Calories:\s*(\d+)\s*kcal[\s\S]*?Protein:\s*(\d+)g[\s\S]*?Carbohydrates:\s*(\d+)g[\s\S]*?Fats:\s*(\d+)g/
-      );
-
-      result.push({
-        title,
-        items,
-        macros: macrosMatch
-          ? {
-              calories: `${macrosMatch[1]} kcal`,
-              protein: `${macrosMatch[2]}g`,
-              carbs: `${macrosMatch[3]}g`,
-              fats: `${macrosMatch[4]}g`,
-            }
-          : null,
-      });
-    } else if (isTotal) {
-      const macrosMatch = section.match(
-        /Calories:\s*(\d+)\s*kcal[\s\S]*?Protein:\s*(\d+)g[\s\S]*?Carbohydrates:\s*(\d+)g[\s\S]*?Fats:\s*(\d+)g/
-      );
-
-      result.push({
-        title: "Total for the Day",
-        macros: macrosMatch
-          ? {
-              calories: `${macrosMatch[1]} kcal`,
-              protein: `${macrosMatch[2]}g`,
-              carbs: `${macrosMatch[3]}g`,
-              fats: `${macrosMatch[4]}g`,
-            }
-          : null,
-      });
+    // Detect meal section
+    const mealMatch = line.match(/^Meal:\s*(.+)/i);
+    if (mealMatch) {
+      if (currentMeal) meals.push(currentMeal);
+      currentMeal = {
+        title: mealMatch[1],
+        items: [],
+        macros: {},
+      };
+      continue;
     }
-  });
 
-  return result;
+    // Detect final total section
+    if (/FINAL TOTAL/i.test(line)) {
+      if (currentMeal) meals.push(currentMeal);
+      currentMeal = {
+        title: "Total for the Day",
+        items: [],
+        macros: {},
+      };
+      continue;
+    }
+
+    // Detect food item line
+    if (/Food\s*\d+:/i.test(line) || /—| - /.test(line)) {
+      const cleanLine = line
+        .replace(/^Food\s*\d+:\s*/, "")
+        .replace(/^[-–—]\s*/, "");
+      const split = cleanLine.split(/[-–—]/).map((s) => s.trim()); // handles em-dash, en-dash, and hyphen
+      if (split.length >= 2 && currentMeal) {
+        currentMeal.items.push({
+          item: split[0],
+          portion: split.slice(1).join(" – "), // support "—" inside portion
+        });
+      }
+      continue;
+    }
+
+    // Macros
+    const macros = currentMeal?.macros;
+    if (/Calories:/i.test(line)) {
+      const match = line.match(/Calories:\s*(\d+)/i);
+      if (match) macros.calories = `${match[1]} kcal`;
+    }
+    if (/Protein:/i.test(line)) {
+      const match = line.match(/Protein:\s*(\d+)/i);
+      if (match) macros.protein = `${match[1]}g`;
+    }
+    if (/Carbs|Carbohydrates/i.test(line)) {
+      const match = line.match(/(?:Carbs|Carbohydrates):\s*(\d+)/i);
+      if (match) macros.carbs = `${match[1]}g`;
+    }
+    if (/Fats?/i.test(line)) {
+      const match = line.match(/Fats?:\s*(\d+)/i);
+      if (match) macros.fats = `${match[1]}g`;
+    }
+  }
+
+  if (currentMeal) meals.push(currentMeal);
+  return meals;
 };
 
 function Page() {
@@ -130,6 +141,7 @@ function Page() {
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const [showGenerateButton, setShowGenerateButton] = useState(true);
+  const [generating, setGenerating] = useState(false);
 
   const [notification, setNotification] = useState({
     visible: false,
@@ -434,22 +446,21 @@ function Page() {
   //     setLoading(false);
   //   }
   // };
+
   const generateAiMealPlan = async () => {
     try {
-      setLoading(true);
-      setShowGenerateButton(false); // Hide button while generating
+      setGenerating(true);
+      setShowGenerateButton(false);
       setError("");
 
       const currentUser = auth.currentUser;
       if (!currentUser || !currentUser.uid) {
-        setError("You must be logged in to generate and save a meal plan.");
-        setLoading(false);
-        setShowGenerateButton(true); // Show button again on failure
-        return;
+        throw new Error(
+          "You must be logged in to generate and save a meal plan."
+        );
       }
 
       const today = new Date().toDateString();
-
       const mealPlanRef = doc(
         db,
         "mealPlans",
@@ -461,109 +472,65 @@ function Page() {
 
       if (existingMealDoc.exists()) {
         const data = existingMealDoc.data();
-        const savedDay = data.createdDay;
-
-        if (savedDay !== today) {
-          await setDoc(mealPlanRef, {}, { merge: true }); // clear contents
-          setMealPlan(""); // clear UI state
+        if (data.createdDay !== today) {
+          await setDoc(mealPlanRef, {}, { merge: true });
+          setMealPlan(""); // Clear UI
         }
       }
 
-      setMealPlan(""); // Clear existing plan in UI state
-
-      const isValid =
-        userData &&
-        typeof userData.calories === "number" &&
-        typeof userData.protein === "number" &&
-        typeof userData.carbs === "number" &&
-        typeof userData.fats === "number";
+      // Validate input
+      const { calories, protein, carbs, fats } = userData || {};
+      const isValid = [calories, protein, carbs, fats].every(
+        (val) => typeof val === "number" && !isNaN(val)
+      );
 
       if (!isValid) {
-        setError("Invalid user data. Please check your input values.");
-        setLoading(false);
-        setShowGenerateButton(true); // Show button again on failure
-        return;
+        throw new Error("Invalid user data. Please check your input values.");
       }
 
-      const relevantData = {
-        calories: userData.calories,
-        protein: userData.protein,
-        carbs: userData.carbs,
-        fats: userData.fats,
-      };
-
+      const relevantData = { calories, protein, carbs, fats };
       console.log("📦 Sending relevant data:", relevantData);
 
+      // Send request
       const response = await axios.post(
         "http://localhost:3001/generate",
         relevantData,
         {
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
         }
       );
 
       console.log("✅ Response from backend:", response.data);
 
       const generatedPlan = response?.data?.mealPlan;
+      if (typeof generatedPlan !== "string") {
+        throw new Error("Unexpected response format from AI meal generator.");
+      }
 
-      if (typeof generatedPlan === "string") {
-        setMealPlan(generatedPlan);
+      setMealPlan(generatedPlan);
 
-        try {
-          await setDoc(mealPlanRef, {
-            ...relevantData,
-            mealPlan: generatedPlan,
-            createdAt: new Date(),
-            createdDay: today,
-          });
-
-          console.log("✅ Meal plan saved to Firebase");
-        } catch (firebaseError) {
-          console.error("🔥 Firebase save error:", firebaseError);
-          setError("Meal plan generated, but failed to save it.");
-          setShowGenerateButton(true); // Show button again on save failure
-        }
-      } else {
-        const fallbackMessage =
-          "Failed to generate meal plan. Unexpected response format.";
-        console.error("❌ Unexpected response:", response?.data ?? "No data");
-        setMealPlan("");
-        setError(fallbackMessage);
-        setShowGenerateButton(true); // Show button again on bad format
+      // Save to Firebase
+      try {
+        await setDoc(mealPlanRef, {
+          ...relevantData,
+          mealPlan: generatedPlan,
+          createdAt: new Date(),
+          createdDay: today,
+        });
+        console.log("✅ Meal plan saved to Firebase");
+      } catch (firebaseError) {
+        console.error("🔥 Firebase save error:", firebaseError);
+        setError("Meal plan generated, but failed to save it.");
       }
     } catch (err) {
-      console.log("🔥 Full error object:", err);
-
-      let errorMsg =
-        "An unknown error occurred while generating the meal plan.";
-
-      try {
-        if (err && typeof err === "object") {
-          if (err.response?.data?.error) {
-            errorMsg = String(err.response.data.error);
-          } else if (typeof err.message === "string") {
-            errorMsg = err.message;
-          } else {
-            errorMsg = JSON.stringify(err);
-          }
-        } else if (typeof err === "string") {
-          errorMsg = err;
-        }
-      } catch (parseError) {
-        errorMsg = "Error while parsing the error object.";
-      }
-
-      const safeMessage =
-        typeof errorMsg === "string" ? errorMsg : "Unknown error";
-
-      console.error("❌ Error generating meal plan:", safeMessage);
-      setError(safeMessage);
+      const errorMsg =
+        err?.response?.data?.error || err.message || "Unknown error occurred.";
+      console.error("❌ Error generating meal plan:", errorMsg);
       setMealPlan("");
-      setShowGenerateButton(true); // Show button again on general failure
+      setError(errorMsg);
     } finally {
-      setLoading(false); // Don't touch button visibility here
+      setGenerating(false);
+      setShowGenerateButton(true); // Always show button back at the end
     }
   };
 
@@ -631,10 +598,34 @@ function Page() {
     return () => unsubscribeAuth();
   }, []);
 
+  const sortMealSections = (sections) => {
+    const order = ["Breakfast", "Snack 1", "Lunch", "Snack 2", "Dinner"];
+
+    // 🧹 Remove any section with "total" in the title
+    const filteredSections = sections.filter(
+      (section) => !section.title.toLowerCase().includes("total")
+    );
+
+    return filteredSections.sort((a, b) => {
+      const indexA = order.findIndex((o) =>
+        a.title.toLowerCase().includes(o.toLowerCase())
+      );
+      const indexB = order.findIndex((o) =>
+        b.title.toLowerCase().includes(o.toLowerCase())
+      );
+      return indexA - indexB;
+    });
+  };
+
   useEffect(() => {
     if (mealPlan && typeof mealPlan === "string") {
-      const structured = parseMealPlan(mealPlan);
-      setParsedPlan(structured);
+      try {
+        const structured = parseMealPlan(mealPlan);
+        const sorted = sortMealSections(structured);
+        setParsedPlan(sorted);
+      } catch (err) {
+        console.error("❌ Failed to parse meal plan:", err);
+      }
     }
   }, [mealPlan]);
 
@@ -722,49 +713,38 @@ function Page() {
           {mealPlan ? (
             <div className="mealWrapper">
               <div className="clear"></div>
-              {/* {mealPlan} */}
-              {/* {Array.isArray(parsedPlan) &&
-                parsedPlan.map((section, index) => (
-                  <React.Fragment key={index}>
-                    <div className="meal-section">
-                      <h3 className="meal-title">{section.title}</h3>
-                      <ul className="meal-list">
-                        {section.items.map((item, i) => (
-                          <li key={i}>{item}</li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div className="clear"></div>
-                  </React.Fragment>
-                ))} */}
-              {Array.isArray(parsedPlan) &&
-                parsedPlan.map((section, index) => (
-                  <React.Fragment key={index}>
-                    <div className="meal-section">
-                      <h3 className="meal-title">{section.title}</h3>
+              {parsedPlan?.map((section, index) => (
+                <React.Fragment key={index}>
+                  <div className="meal-section">
+                    <h3 className="meal-title">{section.title}</h3>
 
-                      {section.items && (
+                    {/* Food items */}
+                    {Array.isArray(section.items) &&
+                      section.items.length > 0 && (
                         <ul className="meal-list">
-                          {section.items.map((item, i) => (
-                            <li key={i}>{item}</li>
+                          {section.items.map((food, i) => (
+                            <li key={i}>
+                              {food.item} — {food.portion}
+                            </li>
                           ))}
                         </ul>
                       )}
 
-                      {section.macros && (
-                        <div className="meal-macros">
-                          <p>
-                            <strong>Calories:</strong> {section.macros.calories}{" "}
-                            | <strong>Protein:</strong> {section.macros.protein}{" "}
-                            | <strong>Carbs:</strong> {section.macros.carbs} |{" "}
-                            <strong>Fats:</strong> {section.macros.fats}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                    <div className="clear"></div>
-                  </React.Fragment>
-                ))}
+                    {/* Macros */}
+                    {section.macros && (
+                      <p className="meal-macros">
+                        <strong>Calories:</strong>{" "}
+                        {section.macros.calories || "N/A"} |{" "}
+                        <strong>Protein:</strong>{" "}
+                        {section.macros.protein || "N/A"} |{" "}
+                        <strong>Carbs:</strong> {section.macros.carbs || "N/A"}{" "}
+                        | <strong>Fats:</strong> {section.macros.fats || "N/A"}
+                      </p>
+                    )}
+                  </div>
+                  <div className="clear"></div>
+                </React.Fragment>
+              ))}
             </div>
           ) : (
             <>
@@ -784,17 +764,26 @@ function Page() {
           )}
         </>
       )}
-      {loading ? (
-        <div className="loading-message">
-          🍽️ Generating your meal plan, please wait...
+      {generating && (
+        <div className="loading-container2">
+          <div className="loading-message">
+            🍽️ Generating your meal plan, please wait...
+          </div>
         </div>
-      ) : null}
+      )}
+
+      {loading && (
+        <div className="loading-container2">
+          <span className="loader"></span>
+        </div>
+      )}
+
       <footer className="footer">
         <div className="container footer-grid">
           <div className="footer-section">
             <div className="footer-logo">TrainifAI</div>
             <div className="footer-text">
-              ©️ 2025 TrainifAI. All rights reserved.
+              © 2025 TrainifAI. All rights reserved.
             </div>
           </div>
 

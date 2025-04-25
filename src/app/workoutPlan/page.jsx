@@ -207,6 +207,8 @@ export default function WorkoutBot() {
   const [openAiModal, setOpenAiModal] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
+  const [userAnswers, setUserAnswers] = useState({});
+
   const open = Boolean(anchorEl);
 
   // const handleClick = (event, workoutDay, exerciseName) => {
@@ -762,7 +764,10 @@ export default function WorkoutBot() {
   //   "Didn't like it",
   //   "Other",
   // ];
+  // === STATE ===
 
+  // === CONVERSATION FLOW MAP ===
+  // === 1. Conversation Map ===
   const conversationMap = {
     "I'm not seeing results": [
       "Got it! Let's look into how we can tweak your workout to be more effective.",
@@ -833,23 +838,29 @@ export default function WorkoutBot() {
     ],
   };
 
-  // Helper to add messages
+  // === 2. Messaging ===
   function addMessage(from, text) {
     setMessages((prev) => [...prev, { from, text }]);
   }
 
-  // ✅ Helper
-  function addMessage(from, text) {
-    setMessages((prev) => [...prev, { from, text }]);
-  }
-
-  function requestChange() {
-    setOpenAiModal(true);
+  // === 3. Reset Chat ===
+  function resetChat() {
+    setOpenAiModal(false);
     setMessages([]);
+    setTyping(false);
     setShowOptions(false);
-    setTyping(true);
     setStep(0);
     setCurrentFlow(null);
+    setDisableOptions(false);
+    setUserAnswers({});
+    setOptions([]);
+  }
+
+  // === 4. Start Conversation ===
+  function requestChange() {
+    resetChat();
+    setOpenAiModal(true);
+    setTyping(true);
 
     setTimeout(() => {
       setTyping(false);
@@ -862,211 +873,151 @@ export default function WorkoutBot() {
           "bot",
           "I'm your workout assistant. Why are you considering changing your workout?"
         );
-        setOptions(Object.keys(conversationMap)); // Initial options
+        setOptions(Object.keys(conversationMap));
         setShowOptions(true);
-      }, 2000);
-    }, 2000);
+      }, 1000);
+    }, 1000);
   }
 
+  // === 5. Handle User Choice ===
   function handleUserChoice(choice) {
-    console.log("User selected:", choice);
+    if (disableOptions) return;
 
-    if (disableOptions) {
-      console.log("Options are currently disabled. Ignoring choice.");
-      return;
+    const currentQuestion =
+      currentFlow && step > 0 ? currentFlow[step - 1]?.question : null;
+    if (currentQuestion) {
+      setUserAnswers((prev) => ({
+        ...prev,
+        [currentQuestion]: choice,
+      }));
     }
 
-    // ✅ Custom reply: "Less than a month"
-    if (choice === "Less than a month") {
-      setDisableOptions(true);
-      addMessage("user", choice);
-      setShowOptions(false);
-      setTyping(true);
-      console.log("User chose 'Less than a month' — sending custom response.");
+    addMessage("user", choice);
+    setDisableOptions(true);
+    setShowOptions(false);
 
+    if (choice === "Less than a month") {
+      setTyping(true);
       setTimeout(() => {
         setTyping(false);
         addMessage(
           "bot",
-          "You have to wait a bit more before expecting strong results."
+          "🚀 Progress takes time — stay consistent and you'll see amazing results soon."
         );
       }, 1000);
-
-      return; // ⛔ Stop the flow
+      return;
     }
 
-    // ✅ Standard user message handling
-    setDisableOptions(true);
-    addMessage("user", choice);
-    setShowOptions(false);
-
-    // ✅ Step 0 — starting a new flow
     if (step === 0) {
       const flow = conversationMap[choice];
-      console.log("Starting new flow:", flow);
       setCurrentFlow(flow);
       setStep(1);
-      handleBotStep(flow, 0); // Start from first bot message
-      return;
-    }
-
-    // 🔄 Custom Replies by Flow + Step
-
-    // "I want something new" — Step 2
-    if (currentFlow === conversationMap["I want something new"] && step === 2) {
-      let customReply = "";
-
-      if (choice === "More fun") {
-        customReply =
-          "Love that! Let’s make your workouts feel more like play and less like a chore.";
-      } else if (choice === "More challenging") {
-        customReply =
-          "Let’s crank things up! You’re ready for a new level of intensity. 🔥";
-      } else if (choice === "Totally different") {
-        customReply =
-          "Awesome — a fresh start can be super motivating. Let’s explore new formats.";
-      }
 
       setTyping(true);
       setTimeout(() => {
         setTyping(false);
-        addMessage("bot", customReply);
-        const nextStep = step + 1;
-        setStep(nextStep);
-        handleBotStep(currentFlow, step); // pass current step
+        handleBotStep(flow, 0);
       }, 1000);
-
       return;
     }
 
-    // "Too hard / too easy" — Step 2
-    if (currentFlow === conversationMap["Too hard / too easy"] && step === 2) {
-      let customReply = "";
-
-      if (choice === "Too easy") {
-        customReply =
-          "Got it — time to level things up so it feels more effective!";
-      } else if (choice === "Too hard") {
-        customReply =
-          "No problem — we’ll scale it back so it's more manageable.";
-      }
-
-      setTyping(true);
-      setTimeout(() => {
-        setTyping(false);
-        addMessage("bot", customReply);
-        const nextStep = step + 1;
-        setStep(nextStep);
-        handleBotStep(currentFlow, step);
-      }, 1000);
-
-      return;
-    }
-
-    // "Didn't like it" — Step 2
-    if (currentFlow === conversationMap["Didn't like it"] && step === 2) {
-      let customReply = "";
-
-      if (choice === "Too repetitive") {
-        customReply =
-          "Understood — we’ll add more variety to keep things fresh.";
-      } else if (choice === "Too intense") {
-        customReply =
-          "Alright — we’ll ease the intensity and find a better fit.";
-      } else if (choice === "Not enjoyable") {
-        customReply =
-          "Let’s inject more enjoyment into it. That’s key for consistency!";
-      } else if (choice === "Didn’t feel effective") {
-        customReply = "We’ll make sure your plan delivers noticeable results.";
-      }
-
-      setTyping(true);
-      setTimeout(() => {
-        setTyping(false);
-        addMessage("bot", customReply);
-        const nextStep = step + 1;
-        setStep(nextStep);
-        handleBotStep(currentFlow, step);
-      }, 1000);
-
-      return;
-    }
-
-    // "Other" — Step 2
-    if (currentFlow === conversationMap["Other"] && step === 2) {
-      let customReply = "";
-
-      if (choice === "Write my goal") {
-        customReply =
-          "Awesome — feel free to share your goal and I’ll shape a plan around it.";
-      } else if (choice === "Pick one") {
-        customReply =
-          "Great! I’ll help you explore some goal options that make sense.";
-      }
-
-      setTyping(true);
-      setTimeout(() => {
-        setTyping(false);
-        addMessage("bot", customReply);
-        const nextStep = step + 1;
-        setStep(nextStep);
-        handleBotStep(currentFlow, step);
-      }, 1000);
-
-      return;
-    }
-
-    // ✅ Default path — just move to the next step
-    const nextStep = step + 1;
-    setStep(nextStep);
-    handleBotStep(currentFlow, step);
-  }
-
-  function handleBotStep(flow, index) {
-    const nextStep = flow[index + 1]; // ✅ Keep this!
+    handleCustomReplies(choice);
 
     setTyping(true);
     setTimeout(() => {
       setTyping(false);
+      setStep((prev) => prev + 1);
+      handleBotStep(currentFlow, step);
+    }, 1000);
+  }
 
+  // === 6. Custom Reply Logic ===
+  function handleCustomReplies(choice) {
+    if (!currentFlow) return;
+
+    if (currentFlow === conversationMap["I want something new"] && step === 2) {
+      const replyMap = {
+        "More fun":
+          "Let’s make your workouts feel more like play and less like a chore.",
+        "More challenging":
+          "Let’s crank things up! You’re ready for a new level of intensity. 🔥",
+        "Totally different":
+          "Fresh start — let’s explore something completely new.",
+      };
+      if (replyMap[choice]) addMessage("bot", replyMap[choice]);
+    }
+
+    if (currentFlow === conversationMap["Too hard / too easy"] && step === 2) {
+      const msg =
+        choice === "Too easy"
+          ? "Got it — time to level things up so it feels more effective!"
+          : "No problem — we’ll scale it back so it's more manageable.";
+      addMessage("bot", msg);
+    }
+
+    if (currentFlow === conversationMap["Didn't like it"] && step === 2) {
+      const replyMap = {
+        "Too repetitive": "We’ll add more variety to keep things fresh.",
+        "Too intense": "We’ll ease the intensity to find a better fit.",
+        "Not enjoyable": "Let’s inject more enjoyment into it.",
+        "Didn’t feel effective":
+          "We’ll make sure your plan delivers noticeable results.",
+      };
+      if (replyMap[choice]) addMessage("bot", replyMap[choice]);
+    }
+
+    if (currentFlow === conversationMap["Other"] && step === 2) {
+      const replyMap = {
+        "Write my goal":
+          "Awesome — feel free to share your goal and I’ll shape a plan around it.",
+        "Pick one":
+          "Great! I’ll help you explore some goal options that make sense.",
+      };
+      if (replyMap[choice]) addMessage("bot", replyMap[choice]);
+    }
+  }
+
+  // === 7. Bot Step Handler ===
+  function handleBotStep(flow, index) {
+    const nextStep = flow[index + 1];
+
+    if (!nextStep) {
+      setTyping(true);
+      setTimeout(() => {
+        setTyping(false);
+        addMessage(
+          "bot",
+          "That's all I need! I’ll start building your plan. 💪"
+        );
+
+        setTyping(true);
+        setTimeout(() => {
+          setTyping(false);
+          const generatedPlan = generateWorkoutFromAnswers(flow, userAnswers);
+          if (generatedPlan) {
+            console.log("✅ Final Plan:", generatedPlan);
+            // setWeeklyWorkout(generatedPlan);
+          } else {
+            console.warn("⚠️ No plan generated.");
+          }
+        }, 1000);
+      }, 1000);
+      return;
+    }
+
+    setTyping(true);
+    setTimeout(() => {
+      setTyping(false);
       if (typeof nextStep === "string") {
         addMessage("bot", nextStep);
         setDisableOptions(false);
-      }
-
-      if (typeof nextStep === "object") {
+      } else if (typeof nextStep === "object") {
         addMessage("bot", nextStep.question);
         setOptions(nextStep.options);
         setShowOptions(true);
         setDisableOptions(false);
       }
-
-      if (!nextStep) {
-        addMessage(
-          "bot",
-          "That's all I need! I’ll start building your plan. 💪"
-        );
-      }
-    }, 1500);
-  }
-
-  const messagesEndRef = useRef(null);
-
-  useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [messages]);
-
-  function resetChat() {
-    setOpenAiModal(false);
-    setMessages([]);
-    setTyping(false);
-    setShowOptions(false);
-    setStep(0);
-    setCurrentFlow(null);
-    setDisableOptions(false);
-    setOptions([]); // optional, just to clear any buttons
+    }, 1000);
   }
 
   return (
@@ -1482,7 +1433,7 @@ export default function WorkoutBot() {
               <></>
             )}
           </div>
-          {hasWorkouts ? (
+          {/* {hasWorkouts ? (
             <div className="requestWrapper">
               <div>Wanna change your workout?</div>
               <button
@@ -1495,7 +1446,7 @@ export default function WorkoutBot() {
             </div>
           ) : (
             <></>
-          )}
+          )} */}
         </div>
 
         {openAiModal && (
@@ -1555,7 +1506,7 @@ export default function WorkoutBot() {
                   </div>
                 )}
 
-                <div ref={messagesEndRef} />
+                {/* <div ref={messagesEndRef} /> */}
               </div>
 
               {/* Options */}
@@ -1581,7 +1532,7 @@ export default function WorkoutBot() {
             <div className="footer-section">
               <div className="footer-logo">TrainifAI</div>
               <div className="footer-text">
-                ©️ {new Date().getFullYear()} TrainifAI. All rights reserved.
+                © {new Date().getFullYear()} TrainifAI. All rights reserved.
               </div>
             </div>
 

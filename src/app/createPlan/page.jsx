@@ -60,7 +60,7 @@ function Page() {
     fitnessGoal: "",
     dietaryPreference: "",
     activityLevel: "",
-    workoutLocation: "",
+    workoutLocation: "gym",
     allergies: "",
     healthProblems: "",
     hatedFood: [],
@@ -200,22 +200,22 @@ function Page() {
 
     switch (userData.dietaryPreference) {
       case "keto":
-        fats = (totalCalories * 0.7) / 9;
-        protein = (totalCalories * 0.25) / 4;
+        fats = (totalCalories * 0.75) / 9;
+        protein = (totalCalories * 0.2) / 4;
         carbs = (totalCalories * 0.05) / 4;
         break;
       case "vegan":
-        protein = (totalCalories * 0.25) / 4;
-        fats = (totalCalories * 0.2) / 9;
-        carbs = (totalCalories * 0.55) / 4;
+        protein = (totalCalories * 0.15) / 4;
+        fats = (totalCalories * 0.25) / 9;
+        carbs = (totalCalories * 0.6) / 4;
         break;
       case "balanced":
       case "no-preference":
       default:
         // Default for balanced or no preference diet
-        protein = (totalCalories * 0.3) / 4;
+        protein = (totalCalories * 0.2) / 4;
         fats = (totalCalories * 0.3) / 9;
-        carbs = (totalCalories * 0.4) / 4;
+        carbs = (totalCalories * 0.5) / 4;
         break;
     }
 
@@ -495,7 +495,7 @@ function Page() {
   }, [userData]);
 
   return (
-    <div className="min-h-screen">
+    <div className="page-wrapper">
       <nav className="nav">
         <div className="nav-container">
           <div className="nav-brand">
@@ -522,7 +522,7 @@ function Page() {
                     { icon: User, label: "Info" },
                     { icon: Utensils, label: "Diet" },
                     { icon: Activity, label: "Activity" },
-                    { icon: Home, label: "Location" },
+                    { icon: Home, label: "Days" },
                     { icon: BadgePlus, label: "Generate" },
                   ].map((item, index) => (
                     <React.Fragment key={item.label}>
@@ -641,7 +641,7 @@ function Page() {
                           <option value="no-preference">No Preference</option>
                         </select>
                       </div>
-                      <div className="form-group">
+                      {/* <div className="form-group">
                         <label className="form-label">Hated Foods</label>
                         <input
                           className="form-input"
@@ -660,7 +660,7 @@ function Page() {
                           onChange={handleInputChange}
                           placeholder="Enter allergies"
                         />
-                      </div>
+                      </div> */}
                     </div>
                   )}
 
@@ -693,7 +693,7 @@ function Page() {
                           </option>
                         </select>
                       </div>
-                      <div className="form-group">
+                      {/* <div className="form-group">
                         <label className="form-label">Health Problems</label>
                         <input
                           className="form-input"
@@ -702,7 +702,7 @@ function Page() {
                           onChange={handleInputChange}
                           placeholder="Enter Health Problems"
                         />
-                      </div>
+                      </div> */}
                     </div>
                   )}
 
@@ -721,19 +721,6 @@ function Page() {
                         <option value="4">4</option>
                         <option value="5">5</option>
                       </select>
-                      <label className="form-label">Workout Location</label>
-                      <select
-                        name="workoutLocation"
-                        value={userData.workoutLocation}
-                        onChange={handleInputChange}
-                        className="form-select"
-                        required
-                      >
-                        <option value="">Select location</option>
-                        {/* <option value="home">Home</option> */}
-                        <option value="gym">Gym</option>
-                        {/* <option value="both">Both</option> */}
-                      </select>
                     </div>
                   )}
 
@@ -746,7 +733,7 @@ function Page() {
                             setStep((prev) => Math.max(1, prev - 1))
                           }
                           className={`btn ${
-                            step === 1 ? "btn-disabled" : "btn-outline"
+                            step === 1 ? "btn-disabled white" : "white"
                           }`}
                           disabled={step === 1}
                         >
@@ -849,7 +836,7 @@ function Page() {
           <div className="footer-section">
             <div className="footer-logo">TrainifAI</div>
             <div className="footer-text">
-              ©️ {new Date().getFullYear()} TrainifAI. All rights reserved.
+              © {new Date().getFullYear()} TrainifAI. All rights reserved.
             </div>
           </div>
 
@@ -889,7 +876,7 @@ function Page() {
           />
           <TermsModal isOpen={showTerms} onClose={() => setShowTerms(false)} /> */}
 
-<div className="footer-section">
+          <div className="footer-section">
             <h4>Stay Connected</h4>
             <div className="social-icons">
               <a

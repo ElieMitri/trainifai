@@ -41,11 +41,11 @@ import {
 import Head from "next/head";
 import { FaXTwitter } from "react-icons/fa6";
 import { FaRedditAlien } from "react-icons/fa";
+import Whish from "../../public/whish.png";
 import PaymentModal from "./components/Modal";
 import Image from "next/image";
-import OMT from "../../public/OMT.jpeg";
-import western from "../../public/western.jpeg";
-import Whish from "../../public/Whish.jpeg";
+import OMT from "../../public/omt.png";
+import western from "../../public/western.png";
 import logo from "../../enhanced-IMG_3755.jpeg.png";
 
 import Notification from "./components/Notification";
@@ -1440,7 +1440,7 @@ function App() {
           <div className="footer-section">
             <div className="footer-logo">TrainifAI</div>
             <div className="footer-text">
-              ©️ {new Date().getFullYear()} TrainifAI. All rights reserved.
+              © {new Date().getFullYear()} TrainifAI. All rights reserved.
             </div>
           </div>
 

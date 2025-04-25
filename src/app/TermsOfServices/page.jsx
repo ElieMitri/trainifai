@@ -130,7 +130,7 @@ const PrivacyPage = () => {
           <div className="footer-section">
             <div className="footer-logo">TrainifAI</div>
             <div className="footer-text">
-              ©️ {new Date().getFullYear()} TrainifAI. All rights reserved.
+              © {new Date().getFullYear()} TrainifAI. All rights reserved.
             </div>
           </div>
 

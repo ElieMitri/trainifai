@@ -152,9 +152,9 @@ const FAQPage = () => {
               Our support team is here to help you with any additional questions
               you might have.
             </p>
-            <Link href="/contact">
+            <a href="mailto:trainifai@gmail.com.com">
               <button className="btn btn-primary">Contact Us</button>
-            </Link>
+            </a>
           </div>
         </div>
 
@@ -165,7 +165,7 @@ const FAQPage = () => {
           <div className="footer-section">
             <div className="footer-logo">TrainifAI</div>
             <div className="footer-text">
-              ©️ {new Date().getFullYear()} TrainifAI. All rights reserved.
+              © {new Date().getFullYear()} TrainifAI. All rights reserved.
             </div>
           </div>
 
