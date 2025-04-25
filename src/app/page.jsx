@@ -41,11 +41,11 @@ import {
 import Head from "next/head";
 import { FaXTwitter } from "react-icons/fa6";
 import { FaRedditAlien } from "react-icons/fa";
-import Whish from "../../public/whish.png";
+import Whish from "../../public/Whish.jpeg";
 import PaymentModal from "./components/Modal";
 import Image from "next/image";
-import OMT from "../../public/omt.png";
-import western from "../../public/western.png";
+import OMT from "../../public/OMT.jpeg";
+import western from "../../public/western.jpeg";
 import logo from "../../enhanced-IMG_3755.jpeg.png";
 
 import Notification from "./components/Notification";
